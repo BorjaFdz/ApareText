@@ -283,6 +283,10 @@
 
         // Renderizar resultados
         function renderResults() {
+            // Actualizar contador
+            const countElement = document.getElementById('snippetCount');
+            countElement.textContent = `${allSnippets.length} snippet${allSnippets.length !== 1 ? 's' : ''}`;
+            
             if (filteredSnippets.length === 0) {
                 resultsContainer.innerHTML = `
                     <div class="no-results">
@@ -347,6 +351,20 @@
                 alert('Error: ' + error.message);
             }
         }
+
+        // Botón: Abrir Manager
+        document.getElementById('openManagerBtn').addEventListener('click', () => {
+            ipcRenderer.send('open-manager');
+            // Ocultar el palette
+            window.blur();
+        });
+
+        // Botón: Crear nuevo snippet - solo abre el manager
+        document.getElementById('newSnippetBtn').addEventListener('click', () => {
+            ipcRenderer.send('open-manager');
+            // Ocultar el palette
+            window.blur();
+        });
 
         console.log('✅ Palette UI loaded');
     </script>

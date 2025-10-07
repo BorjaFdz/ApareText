@@ -593,6 +593,12 @@ Puedes usar variables:
         // Inicializar
         loadSnippets();
         
+        // Escuchar evento desde main process para crear nuevo snippet
+        ipcRenderer.on('trigger-new-snippet', () => {
+            console.log('📝 Triggered new snippet from palette');
+            newSnippet();
+        });
+        
         console.log('✅ Snippet Manager loaded');
     </script>
 </body>

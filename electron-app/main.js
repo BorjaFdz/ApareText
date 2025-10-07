@@ -47,7 +47,7 @@ function createAppIcon() {
 function createPaletteWindow() {
     paletteWindow = new BrowserWindow({
         width: 600,
-        height: 400,
+        height: 450, // Aumentado para mostrar la toolbar
         show: false,
         frame: false,
         transparent: true,
@@ -57,7 +57,8 @@ function createPaletteWindow() {
         icon: createAppIcon(),
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            devTools: true // Habilitar DevTools para debug
         }
     });
 
@@ -385,6 +386,26 @@ ipcMain.handle('delete-snippet', async (event, snippetId) => {
     } catch (error) {
         console.error('Error deleting snippet:', error);
         throw error;
+    }
+});
+
+// IPC: Abrir Manager desde el palette
+ipcMain.on('open-manager', () => {
+    if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+    }
+});
+
+// IPC: Abrir Manager en modo "nuevo snippet"
+ipcMain.on('open-manager-new', () => {
+    if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+        // Enviar evento al manager para que abra el formulario de nuevo snippet
+        mainWindow.webContents.once('dom-ready', () => {
+            mainWindow.webContents.send('trigger-new-snippet');
+        });
     }
 });
 
