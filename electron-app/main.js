@@ -47,7 +47,7 @@ function createAppIcon() {
 function createPaletteWindow() {
     paletteWindow = new BrowserWindow({
         width: 600,
-        height: 450, // Aumentado para mostrar la toolbar
+        height: 550, // Aumentado más para mostrar TODO el contenido completo
         show: false,
         frame: false,
         transparent: true,

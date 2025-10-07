@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ApareText - Snippet Manager</title>
+    
+    <!-- Quill Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -320,13 +325,19 @@
 
                 <div class="form-group">
                     <label class="form-label">Contenido</label>
+                    
+                    <!-- Editor WYSIWYG con Quill -->
+                    <div id="editor-container" style="height: 300px; background: white; border: 1px solid #ddd; border-radius: 8px;"></div>
+                    
+                    <!-- Textarea oculto para plain text (cuando rich text está deshabilitado) -->
                     <textarea class="form-input form-textarea" id="contentInput" placeholder="Escribe el contenido del snippet aquí...
 
 Puedes usar variables:
 {{nombre}} - Variable de texto
 {{date:%d/%m/%Y}} - Fecha actual
 {{time:%H:%M}} - Hora actual
-{{|}} - Posición del cursor"></textarea>
+{{|}} - Posición del cursor" style="display: none; height: 300px;"></textarea>
+                    
                     <div class="form-hint">Usa {{variable}} para campos personalizables</div>
                 </div>
 
@@ -378,6 +389,42 @@ Puedes usar variables:
         const deleteBtn = document.getElementById('deleteBtn');
         const cancelBtn = document.getElementById('cancelBtn');
 
+        // Inicializar Quill Editor
+        let quill = new Quill('#editor-container', {
+            theme: 'snow',
+            placeholder: 'Escribe el contenido del snippet aquí...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['link'],
+                    ['clean']
+                ]
+            }
+        });
+
+        // Toggle entre editor rico y plain text
+        richInput.addEventListener('change', () => {
+            const editorContainer = document.getElementById('editor-container');
+            if (richInput.checked) {
+                // Modo WYSIWYG
+                editorContainer.style.display = 'block';
+                contentInput.style.display = 'none';
+                // Transferir contenido de textarea a quill
+                if (contentInput.value) {
+                    quill.root.innerHTML = contentInput.value;
+                }
+            } else {
+                // Modo plain text
+                editorContainer.style.display = 'none';
+                contentInput.style.display = 'block';
+                // Transferir contenido de quill a textarea (solo texto)
+                contentInput.value = quill.getText();
+            }
+        });
+
         // Cargar snippets
         async function loadSnippets() {
             try {
@@ -428,9 +475,14 @@ Puedes usar variables:
             nameInput.value = '';
             abbrInput.value = '';
             contentInput.value = '';
-            richInput.checked = false;
+            quill.setContents([]); // Limpiar editor Quill
+            richInput.checked = true; // Empezar con WYSIWYG por defecto
             enabledInput.checked = true;
             renderTags();
+            
+            // Mostrar editor rico por defecto
+            document.getElementById('editor-container').style.display = 'block';
+            contentInput.style.display = 'none';
             
             showEditor();
         }
@@ -443,11 +495,21 @@ Puedes usar variables:
             
             nameInput.value = snippet.name;
             abbrInput.value = snippet.abbreviation?.replace(/^;+/, '') || '';
-            contentInput.value = snippet.content_text || snippet.content_html || '';
             richInput.checked = snippet.is_rich;
             enabledInput.checked = snippet.enabled;
-            renderTags();
             
+            // Cargar contenido según el tipo
+            if (snippet.is_rich && snippet.content_html) {
+                quill.root.innerHTML = snippet.content_html;
+                document.getElementById('editor-container').style.display = 'block';
+                contentInput.style.display = 'none';
+            } else {
+                contentInput.value = snippet.content_text || '';
+                document.getElementById('editor-container').style.display = 'none';
+                contentInput.style.display = 'block';
+            }
+            
+            renderTags();
             showEditor();
             renderSnippetList();
         }

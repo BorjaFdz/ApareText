@@ -2,6 +2,7 @@
 API REST con FastAPI.
 """
 
+from datetime import datetime
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Query
@@ -181,9 +182,24 @@ async def update_snippet(snippet_id: str, snippet_data: SnippetUpdate):
 
     # Actualizar solo campos proporcionados
     update_dict = snippet_data.model_dump(exclude_unset=True)
+    
+    # Convertir enums y otros tipos especiales
     for key, value in update_dict.items():
-        setattr(existing, key, value)
+        if value is not None:
+            # Si es scope_type y viene como string, convertir a ScopeType
+            if key == "scope_type" and isinstance(value, str):
+                from core.models import ScopeType
+                value = ScopeType(value)
+            # Si es variables, asegurarse de que sean SnippetVariable objects
+            elif key == "variables" and isinstance(value, list):
+                from core.models import SnippetVariable
+                value = [SnippetVariable(**v) if isinstance(v, dict) else v for v in value]
+            
+            setattr(existing, key, value)
 
+    # Actualizar timestamp
+    existing.updated_at = datetime.utcnow()
+    
     updated = manager.update_snippet(snippet_id, existing)
     return updated
 
