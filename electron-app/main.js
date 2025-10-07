@@ -153,7 +153,7 @@ function createTray() {
     ]);
 
     tray.setContextMenu(contextMenu);
-    tray.setToolTip('📝 ApareText - Text Expander (Click para abrir)');
+    tray.setToolTip('ApareText - Text Expander (Click para abrir)');
 
     tray.on('click', showPalette);
 }
@@ -381,4 +381,4 @@ ipcMain.on('open-manager-new', () => {
     }
 });
 
-console.log('📝 ApareText Electron loaded');
+console.log('[ApareText] Electron loaded');
