@@ -1,0 +1,125 @@
+[project]
+name = "aparetext"
+version = "0.1.0"
+description = "Text expander with global overlay, abbreviation expansion, and browser integration"
+authors = [
+    {name = "BorjaFdz", email = ""}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["text-expander", "snippets", "productivity", "automation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "pydantic>=2.0.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.12.0",
+]
+
+[project.optional-dependencies]
+core = [
+    "pydantic>=2.0.0",
+    "sqlalchemy>=2.0.0",
+]
+
+server = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "websockets>=12.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.6",
+]
+
+desktop = [
+    "PySide6>=6.6.0",
+    "pynput>=1.7.6",
+    "keyboard>=0.13.5; sys_platform == 'win32' or sys_platform == 'linux'",
+    "pyobjc-framework-Cocoa>=10.0; sys_platform == 'darwin'",
+    "pyobjc-framework-Quartz>=10.0; sys_platform == 'darwin'",
+    "pywin32>=306; sys_platform == 'win32'",
+    "python-xlib>=0.33; sys_platform == 'linux'",
+    "pyperclip>=1.8.2",
+]
+
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.5.0",
+]
+
+build = [
+    "pyinstaller>=6.0.0",
+    "nuitka>=1.9.0",
+]
+
+all = [
+    "aparetext[core,server,desktop,dev]",
+]
+
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["core", "desktop", "server"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --cov=core --cov=server --cov=desktop --cov-report=html --cov-report=term"
+
+[tool.coverage.run]
+source = ["core", "server", "desktop"]
+omit = ["*/tests/*", "*/migrations/*"]

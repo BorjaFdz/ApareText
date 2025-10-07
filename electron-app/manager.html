@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApareText - Snippet Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: #2196f3;
+            color: white;
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .search-box {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .snippet-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .snippet-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .snippet-item:hover {
+            background: #f9f9f9;
+        }
+
+        .snippet-item.active {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+
+        .snippet-item-name {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .snippet-item-abbr {
+            font-size: 12px;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .sidebar-actions {
+            padding: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #2196f3;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1976d2;
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            padding: 15px 20px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-icon {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-icon:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .editor {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        .form-checkbox {
+            margin-right: 8px;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .tag-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 42px;
+        }
+
+        .tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .tag-input input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 100px;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>📝 ApareText</h1>
+            <p>Snippet Manager</p>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" class="search-input" placeholder="🔍 Buscar snippets..." id="searchInput">
+        </div>
+        
+        <div class="snippet-list" id="snippetList">
+            <!-- Se llena dinámicamente -->
+        </div>
+        
+        <div class="sidebar-actions">
+            <button class="btn btn-primary" id="newSnippetBtn">➕ Nuevo Snippet</button>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content">
+        <div class="toolbar" id="toolbar" style="display: none;">
+            <button class="btn-icon" id="saveBtn">💾 Guardar</button>
+            <button class="btn-icon" id="duplicateBtn">📋 Duplicar</button>
+            <button class="btn-icon btn-danger" id="deleteBtn">🗑️ Eliminar</button>
+            <div style="flex: 1;"></div>
+            <button class="btn-icon" id="cancelBtn">❌ Cancelar</button>
+        </div>
+
+        <div class="editor">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-icon">📝</div>
+                <h2>Gestor de Snippets</h2>
+                <p>Selecciona un snippet de la lista o crea uno nuevo</p>
+            </div>
+
+            <div class="card" id="editorForm" style="display: none;">
+                <h2 class="card-title" id="formTitle">Nuevo Snippet</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Nombre del Snippet</label>
+                    <input type="text" class="form-input" id="nameInput" placeholder="Ej: Firma Email Profesional">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Abreviatura (opcional)</label>
+                    <input type="text" class="form-input" id="abbrInput" placeholder="Ej: firma (sin el ;)">
+                    <div class="form-hint">Se mostrará como ;firma en la paleta</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tags</label>
+                    <div class="tag-input" id="tagInput">
+                        <input type="text" placeholder="Presiona Enter para agregar" id="tagInputField">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contenido</label>
+                    <textarea class="form-input form-textarea" id="contentInput" placeholder="Escribe el contenido del snippet aquí...
+
+Puedes usar variables:
+{{nombre}} - Variable de texto
+{{date:%d/%m/%Y}} - Fecha actual
+{{time:%H:%M}} - Hora actual
+{{|}} - Posición del cursor"></textarea>
+                    <div class="form-hint">Usa {{variable}} para campos personalizables</div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" class="form-checkbox" id="richInput">
+                        <span class="form-label" style="display: inline;">Contenido HTML enriquecido</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" class="form-checkbox" id="enabledInput" checked>
+                        <span class="form-label" style="display: inline;">Snippet habilitado</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let snippets = [];
+        let currentSnippet = null;
+        let currentTags = [];
+
+        // Elementos DOM
+        const searchInput = document.getElementById('searchInput');
+        const snippetList = document.getElementById('snippetList');
+        const newSnippetBtn = document.getElementById('newSnippetBtn');
+        const toolbar = document.getElementById('toolbar');
+        const emptyState = document.getElementById('emptyState');
+        const editorForm = document.getElementById('editorForm');
+        const formTitle = document.getElementById('formTitle');
+        
+        // Form inputs
+        const nameInput = document.getElementById('nameInput');
+        const abbrInput = document.getElementById('abbrInput');
+        const contentInput = document.getElementById('contentInput');
+        const richInput = document.getElementById('richInput');
+        const enabledInput = document.getElementById('enabledInput');
+        const tagInputField = document.getElementById('tagInputField');
+        const tagInput = document.getElementById('tagInput');
+
+        // Buttons
+        const saveBtn = document.getElementById('saveBtn');
+        const duplicateBtn = document.getElementById('duplicateBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        // Cargar snippets
+        async function loadSnippets() {
+            try {
+                snippets = await ipcRenderer.invoke('get-snippets');
+                renderSnippetList();
+            } catch (error) {
+                console.error('Error loading snippets:', error);
+            }
+        }
+
+        // Renderizar lista
+        function renderSnippetList() {
+            const query = searchInput.value.toLowerCase();
+            const filtered = snippets.filter(s => 
+                s.name.toLowerCase().includes(query) ||
+                s.abbreviation?.toLowerCase().includes(query)
+            );
+
+            snippetList.innerHTML = filtered.map(snippet => {
+                const cleanAbbr = snippet.abbreviation ? 
+                    snippet.abbreviation.replace(/^;+/, '') : '';
+                
+                return `
+                    <div class="snippet-item ${currentSnippet?.id === snippet.id ? 'active' : ''}" 
+                         data-id="${snippet.id}">
+                        <div class="snippet-item-name">${snippet.name}</div>
+                        <div class="snippet-item-abbr">${cleanAbbr ? ';' + cleanAbbr : 'Sin abreviatura'}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Event listeners
+            document.querySelectorAll('.snippet-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const id = item.dataset.id;
+                    const snippet = snippets.find(s => s.id === id);
+                    editSnippet(snippet);
+                });
+            });
+        }
+
+        // Nuevo snippet
+        function newSnippet() {
+            currentSnippet = null;
+            currentTags = [];
+            formTitle.textContent = 'Nuevo Snippet';
+            
+            nameInput.value = '';
+            abbrInput.value = '';
+            contentInput.value = '';
+            richInput.checked = false;
+            enabledInput.checked = true;
+            renderTags();
+            
+            showEditor();
+        }
+
+        // Editar snippet
+        function editSnippet(snippet) {
+            currentSnippet = snippet;
+            currentTags = [...snippet.tags];
+            formTitle.textContent = 'Editar Snippet';
+            
+            nameInput.value = snippet.name;
+            abbrInput.value = snippet.abbreviation?.replace(/^;+/, '') || '';
+            contentInput.value = snippet.content_text || snippet.content_html || '';
+            richInput.checked = snippet.is_rich;
+            enabledInput.checked = snippet.enabled;
+            renderTags();
+            
+            showEditor();
+            renderSnippetList();
+        }
+
+        // Mostrar/ocultar editor
+        function showEditor() {
+            emptyState.style.display = 'none';
+            editorForm.style.display = 'block';
+            toolbar.style.display = 'flex';
+        }
+
+        function hideEditor() {
+            emptyState.style.display = 'block';
+            editorForm.style.display = 'none';
+            toolbar.style.display = 'none';
+            currentSnippet = null;
+            renderSnippetList();
+        }
+
+        // Tags
+        function renderTags() {
+            const tagElements = currentTags.map((tag, index) => `
+                <span class="tag">
+                    ${tag}
+                    <span class="tag-remove" data-index="${index}">×</span>
+                </span>
+            `).join('');
+            
+            tagInput.innerHTML = tagElements + '<input type="text" placeholder="Presiona Enter para agregar" id="tagInputField">';
+            
+            const newTagInput = document.getElementById('tagInputField');
+            newTagInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && newTagInput.value.trim()) {
+                    e.preventDefault();
+                    currentTags.push(newTagInput.value.trim());
+                    renderTags();
+                }
+            });
+
+            document.querySelectorAll('.tag-remove').forEach(el => {
+                el.addEventListener('click', () => {
+                    const index = parseInt(el.dataset.index);
+                    currentTags.splice(index, 1);
+                    renderTags();
+                });
+            });
+        }
+
+        // Guardar snippet
+        async function saveSnippet() {
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert('El nombre es obligatorio');
+                return;
+            }
+
+            const abbreviation = abbrInput.value.trim();
+            const content = contentInput.value;
+            const isRich = richInput.checked;
+            const enabled = enabledInput.checked;
+
+            const snippetData = {
+                name,
+                abbreviation: abbreviation || null,
+                tags: currentTags,
+                content_text: isRich ? null : content,
+                content_html: isRich ? content : null,
+                is_rich: isRich,
+                scope_type: 'global',
+                scope_values: [],
+                variables: [],
+                enabled
+            };
+
+            try {
+                if (currentSnippet) {
+                    // Actualizar
+                    await ipcRenderer.invoke('update-snippet', currentSnippet.id, snippetData);
+                    console.log('✅ Snippet actualizado');
+                } else {
+                    // Crear
+                    await ipcRenderer.invoke('create-snippet', snippetData);
+                    console.log('✅ Snippet creado');
+                }
+                
+                await loadSnippets();
+                hideEditor();
+            } catch (error) {
+                console.error('Error saving snippet:', error);
+                alert('Error al guardar: ' + error.message);
+            }
+        }
+
+        // Duplicar snippet
+        async function duplicateSnippet() {
+            if (!currentSnippet) return;
+            
+            const snippetData = {
+                name: currentSnippet.name + ' (copia)',
+                abbreviation: currentSnippet.abbreviation,
+                tags: [...currentSnippet.tags],
+                content_text: currentSnippet.content_text,
+                content_html: currentSnippet.content_html,
+                is_rich: currentSnippet.is_rich,
+                scope_type: currentSnippet.scope_type,
+                scope_values: currentSnippet.scope_values,
+                variables: currentSnippet.variables
+            };
+
+            try {
+                await ipcRenderer.invoke('create-snippet', snippetData);
+                await loadSnippets();
+                console.log('✅ Snippet duplicado');
+            } catch (error) {
+                console.error('Error duplicating snippet:', error);
+            }
+        }
+
+        // Eliminar snippet
+        async function deleteSnippet() {
+            if (!currentSnippet) return;
+            
+            if (!confirm(`¿Eliminar "${currentSnippet.name}"?`)) return;
+
+            try {
+                await ipcRenderer.invoke('delete-snippet', currentSnippet.id);
+                await loadSnippets();
+                hideEditor();
+                console.log('✅ Snippet eliminado');
+            } catch (error) {
+                console.error('Error deleting snippet:', error);
+            }
+        }
+
+        // Event listeners
+        newSnippetBtn.addEventListener('click', newSnippet);
+        saveBtn.addEventListener('click', saveSnippet);
+        duplicateBtn.addEventListener('click', duplicateSnippet);
+        deleteBtn.addEventListener('click', deleteSnippet);
+        cancelBtn.addEventListener('click', hideEditor);
+        searchInput.addEventListener('input', renderSnippetList);
+
+        // Inicializar
+        loadSnippets();
+        
+        console.log('✅ Snippet Manager loaded');
+    </script>
+</body>
+</html>

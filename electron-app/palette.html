@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApareText - Command Palette</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        .palette-container {
+            width: 600px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .search-box {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .search-input {
+            width: 100%;
+            font-size: 18px;
+            padding: 12px;
+            border: none;
+            outline: none;
+            background: transparent;
+        }
+
+        .results {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .snippet-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.15s;
+        }
+
+        .snippet-item:hover,
+        .snippet-item.selected {
+            background: #e3f2fd;
+        }
+
+        .snippet-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .snippet-abbr {
+            display: inline-block;
+            font-size: 12px;
+            color: #666;
+            background: #f5f5f5;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .snippet-preview {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .no-results {
+            padding: 40px 20px;
+            text-align: center;
+            color: #999;
+        }
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .empty-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Scrollbar personalizado */
+        .results::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .results::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .results::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        .results::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        /* Barra de herramientas inferior */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            border-top: 1px solid #e0e0e0;
+            background: rgba(248, 248, 248, 0.9);
+        }
+
+        .toolbar-button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #555;
+        }
+
+        .toolbar-button:hover {
+            background: #e3f2fd;
+            border-color: #2196F3;
+            color: #2196F3;
+        }
+
+        .toolbar-button:active {
+            transform: scale(0.95);
+        }
+
+        .toolbar-info {
+            font-size: 11px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="palette-container">
+        <div class="search-box">
+            <input 
+                type="text" 
+                class="search-input" 
+                placeholder="🔍 Search snippets..."
+                autofocus
+                id="searchInput"
+            >
+        </div>
+        <div class="results" id="results">
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <div class="empty-text">Type to search for snippets</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let allSnippets = [];
+        let filteredSnippets = [];
+        let selectedIndex = 0;
+
+        const searchInput = document.getElementById('searchInput');
+        const resultsContainer = document.getElementById('results');
+
+        // Cargar snippets al abrir
+        window.addEventListener('focus', async () => {
+            console.log('Palette focused, loading snippets...');
+            searchInput.value = '';
+            searchInput.focus();
+            await loadSnippets();
+        });
+
+        // También cargar al inicio
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Palette loaded');
+            await loadSnippets();
+        });
+
+        // Cargar todos los snippets
+        async function loadSnippets() {
+            try {
+                console.log('Loading snippets...');
+                allSnippets = await ipcRenderer.invoke('get-snippets');
+                console.log('Snippets loaded:', allSnippets.length, allSnippets);
+                filteredSnippets = allSnippets;
+                selectedIndex = 0;
+                renderResults();
+            } catch (error) {
+                console.error('Error loading snippets:', error);
+            }
+        }
+
+        // Búsqueda en tiempo real
+        searchInput.addEventListener('input', async (e) => {
+            const query = e.target.value.trim().toLowerCase();
+
+            console.log('Search query:', query);
+
+            if (!query) {
+                filteredSnippets = allSnippets;
+                console.log('Empty query, showing all snippets:', filteredSnippets.length);
+            } else {
+                // Búsqueda fuzzy simple
+                filteredSnippets = allSnippets.filter(snippet => {
+                    const name = snippet.name.toLowerCase();
+                    const abbr = snippet.abbreviation?.toLowerCase() || '';
+                    const content = snippet.content_text?.toLowerCase() || '';
+                    
+                    return name.includes(query) || 
+                           abbr.includes(query) || 
+                           content.includes(query);
+                });
+                console.log('Filtered results:', filteredSnippets.length);
+            }
+
+            selectedIndex = 0;
+            renderResults();
+        });
+
+        // Navegación con teclado
+        searchInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, filteredSnippets.length - 1);
+                renderResults();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                renderResults();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (filteredSnippets.length > 0) {
+                    await expandSnippet(filteredSnippets[selectedIndex]);
+                }
+            } else if (e.key === 'Escape') {
+                window.close();
+            }
+        });
+
+        // Renderizar resultados
+        function renderResults() {
+            if (filteredSnippets.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="no-results">
+                        No snippets found
+                    </div>
+                `;
+                return;
+            }
+
+            resultsContainer.innerHTML = filteredSnippets.map((snippet, index) => {
+                const preview = snippet.content_text || snippet.content_html || '';
+                // Limpiar la abreviatura para quitar el ; si ya lo tiene
+                const cleanAbbr = snippet.abbreviation ? 
+                    snippet.abbreviation.replace(/^;+/, '') : '';
+                
+                return `
+                    <div class="snippet-item ${index === selectedIndex ? 'selected' : ''}" 
+                         data-index="${index}">
+                        <div class="snippet-name">
+                            ${snippet.name}
+                            ${cleanAbbr ? 
+                                `<span class="snippet-abbr">;${cleanAbbr}</span>` : 
+                                ''}
+                        </div>
+                        <div class="snippet-preview">${preview.substring(0, 100)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Click en items
+            document.querySelectorAll('.snippet-item').forEach(item => {
+                item.addEventListener('click', async () => {
+                    const index = parseInt(item.dataset.index);
+                    await expandSnippet(filteredSnippets[index]);
+                });
+            });
+
+            // Scroll al item seleccionado
+            const selectedItem = document.querySelector('.snippet-item.selected');
+            if (selectedItem) {
+                selectedItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        // Expandir snippet
+        async function expandSnippet(snippet) {
+            try {
+                // TODO: Si el snippet tiene variables, mostrar form
+                const variables = {};
+
+                const result = await ipcRenderer.invoke('expand-snippet', snippet.id, variables);
+                
+                if (result.success) {
+                    console.log('✅ Snippet expanded and copied to clipboard');
+                    // La ventana se cerrará automáticamente desde main.js
+                } else {
+                    console.error('❌ Error expanding:', result.error);
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        console.log('✅ Palette UI loaded');
+    </script>
+</body>
+</html>
