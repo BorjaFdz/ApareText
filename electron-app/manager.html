@@ -12,6 +12,9 @@
     <!-- Chart.js for Statistics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
+    <!-- html2canvas for Screenshots -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    
     <style>
         :root {
             /* Light Theme (default) */
@@ -46,9 +49,9 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: transparent;
+            background: #f5f5f7;
             overflow: hidden;
-            padding: 12px;
+            padding: 0;
             margin: 0;
             height: 100vh;
             box-sizing: border-box;
@@ -58,15 +61,8 @@
         .manager-container {
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px) saturate(120%);
-            -webkit-backdrop-filter: blur(20px) saturate(120%);
-            border-radius: 16px;
-            box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.15),
-                0 1px 0 rgba(255, 255, 255, 0.5) inset;
+            background: #ffffff;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.5);
             display: flex;
         }
 
@@ -176,6 +172,51 @@
             letter-spacing: 0.3px;
             display: inline-block;
             margin-top: 2px;
+        }
+
+        .snippet-item-thumbnail {
+            width: 100%;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-top: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .snippet-item-content {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .snippet-item-thumb-container {
+            flex-shrink: 0;
+            width: 80px;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(248, 248, 250, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .snippet-item-thumb-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .snippet-item-thumb-container .thumb-placeholder {
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .snippet-item-info {
+            flex: 1;
+            min-width: 0;
         }
 
         .sidebar-actions {
@@ -321,6 +362,75 @@
             background: rgba(255, 59, 48, 0.2);
         }
 
+        /* Toggle Switch para habilitar/deshabilitar */
+        .toggle-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: rgba(248, 248, 250, 0.7);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .toggle-switch:hover {
+            background: rgba(248, 248, 250, 0.9);
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+
+        .toggle-switch-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        .toggle-switch-control {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-switch-control {
+            background: rgba(52, 199, 89, 0.9);
+        }
+
+        .toggle-switch-control::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-switch-control::after {
+            transform: translateX(20px);
+        }
+
+        .toggle-switch-status {
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 80px;
+        }
+
+        .toggle-switch.active .toggle-switch-status {
+            color: rgba(52, 199, 89, 0.9);
+        }
+
+        .toggle-switch:not(.active) .toggle-switch-status {
+            color: rgba(255, 59, 48, 0.8);
+        }
+
         .editor {
             flex: 1;
             overflow-y: auto;
@@ -455,9 +565,20 @@
             color: rgba(0, 0, 0, 0.87);
         }
 
-        /* Estadísticas */
-        .stats-section {
+        /* Sections - Separación visual */
+        .stats-section,
+        .voice-section,
+        .screenshot-section {
             padding: 24px;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .stats-section .card,
+        .voice-section .card,
+        .screenshot-section .card {
+            max-width: 100%;
         }
 
         .stat-card {
@@ -774,6 +895,7 @@
             <button class="btn-icon" id="exportBtn" title="Exportar snippets a JSON">💾 Export</button>
             <button class="btn-icon" id="importBtn" title="Importar snippets desde JSON">📥 Import</button>
             <button class="btn-icon" id="statsBtn" title="Ver estadísticas de uso">📊 Stats</button>
+            <button class="btn-icon" id="voiceBtn" title="Comandos de voz (experimental)">🎙️ Voice</button>
             <div style="flex: 1;"></div>
             <select class="btn-icon" id="themeSelector" title="Cambiar tema" style="padding: 8px 12px; cursor: pointer; min-width: 120px;">
                 <option value="light">☀️ Claro</option>
@@ -787,6 +909,11 @@
             <button class="btn-icon" id="duplicateBtn">📋 Duplicar</button>
             <button class="btn-icon btn-danger" id="deleteBtn">🗑️ Eliminar</button>
             <div style="flex: 1;"></div>
+            <div class="toggle-switch active" id="enableToggle">
+                <span class="toggle-switch-label">Estado:</span>
+                <div class="toggle-switch-control"></div>
+                <span class="toggle-switch-status">✓ Habilitado</span>
+            </div>
             <button class="btn-icon" id="cancelBtn">❌ Cancelar</button>
         </div>
 
@@ -815,6 +942,26 @@
                         <div class="stat-card">
                             <div class="stat-value" id="enabledSnippets">0</div>
                             <div class="stat-label">Snippets Activos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="timeSaved">0h</div>
+                            <div class="stat-label">⏱️ Tiempo Ahorrado</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="productivity">0%</div>
+                            <div class="stat-label">📈 Productividad</div>
+                        </div>
+                        <div class="stat-card">📸 Screenshot Library - Rápido y visual
+                            <div class="stat-value" id="streak">0</div>
+                            <div class="stat-label">🔥 Racha (días)</div>
+                        </div>
+                    </div>
+
+                    <!-- Productivity Insights -->
+                    <div style="background: linear-gradient(135deg, rgba(0, 122, 255, 0.1) 0%, rgba(52, 199, 89, 0.1) 100%); border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid rgba(0, 122, 255, 0.2);">
+                        <h3 style="margin-bottom: 12px; color: rgba(0, 0, 0, 0.85); font-size: 18px;">💡 Insights de Productividad</h3>
+                        <div id="productivityInsights" style="color: rgba(0, 0, 0, 0.7); line-height: 1.8;">
+                            <p>📊 Analizando tus patrones de uso...</p>
                         </div>
                     </div>
 
@@ -851,6 +998,27 @@
                     <input type="text" class="form-input" id="nameInput" placeholder="Ej: Firma Email Profesional">
                 </div>
 
+                <!-- Snippet Type Selector -->
+                <div class="form-group">
+                    <label class="form-label">Tipo de Snippet</label>
+                    <div style="display: flex; gap: 16px; margin-top: 8px;">
+                        <label style="display: flex; align-items: center; cursor: pointer; padding: 12px; background: rgba(248, 248, 250, 0.7); border-radius: 8px; flex: 1; transition: all 0.2s ease;">
+                            <input type="radio" name="snippetType" value="text" id="typeText" checked style="margin-right: 8px;">
+                            <div>
+                                <div style="font-weight: 500; color: rgba(0, 0, 0, 0.87);">📝 Texto</div>
+                                <div style="font-size: 12px; color: rgba(0, 0, 0, 0.6);">Expande texto (HTML o plain text)</div>
+                            </div>
+                        </label>
+                        <label style="display: flex; align-items: center; cursor: pointer; padding: 12px; background: rgba(248, 248, 250, 0.7); border-radius: 8px; flex: 1; transition: all 0.2s ease;">
+                            <input type="radio" name="snippetType" value="image" id="typeImage" style="margin-right: 8px;">
+                            <div>
+                                <div style="font-weight: 500; color: rgba(0, 0, 0, 0.87);">🖼️ Imagen</div>
+                                <div style="font-size: 12px; color: rgba(0, 0, 0, 0.6);">Copia imagen al portapapeles</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Abreviatura (opcional)</label>
                     <input type="text" class="form-input" id="abbrInput" placeholder="Ej: firma (sin el ;)">
@@ -864,6 +1032,42 @@
                     </div>
                 </div>
 
+                <!-- Image Upload Section - Solo para snippets tipo IMAGE -->
+                <div class="form-group" id="imageUploadSection" style="display: none;">
+                    <label class="form-label">🖼️ Imagen del Snippet</label>
+                    <div class="form-hint" style="margin-bottom: 12px;">
+                        La imagen que se copiará al portapapeles cuando uses la abreviación
+                    </div>
+                    
+                    <div style="display: flex; gap: 16px; align-items: flex-start;">
+                        <!-- Image Preview -->
+                        <div id="imagePreviewContainer" style="flex-shrink: 0;">
+                            <div id="imagePreview" style="width: 200px; height: 200px; border: 2px dashed rgba(0, 122, 255, 0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(248, 248, 250, 0.7); overflow: hidden; position: relative;">
+                                <span style="color: rgba(0, 0, 0, 0.4); font-size: 64px;">🖼️</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Image Actions -->
+                        <div style="flex: 1;">
+                            <button type="button" class="btn" onclick="pasteImageFromClipboard()" style="margin-bottom: 8px; width: 100%;">
+                                📋 Pegar desde Portapapeles
+                            </button>
+                            <button type="button" class="btn" onclick="selectImageFile()" style="margin-bottom: 8px; width: 100%;">
+                                📁 Seleccionar Archivo
+                            </button>
+                            <button type="button" class="btn" onclick="removeImage()" style="width: 100%;">
+                                🗑️ Eliminar Imagen
+                            </button>
+                            <div class="form-hint" style="margin-top: 12px; font-size: 12px;">
+                                <strong>💡 Formatos soportados:</strong> PNG, JPG, GIF
+                            </div>
+                        </div>
+                    </div>
+                    <input type="file" id="imageFileInput" accept="image/png,image/jpeg,image/gif" style="display: none;">
+                </div>
+
+                <!-- Text Content Section - Solo para snippets tipo TEXT -->
+                <div id="textContentSection">
                 <div class="form-group">
                     <label class="form-label">Contenido</label>
                     
@@ -908,11 +1112,82 @@ Puedes usar variables:
                     </label>
                 </div>
 
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" class="form-checkbox" id="enabledInput" checked>
-                        <span class="form-label" style="display: inline;">Snippet habilitado</span>
-                    </label>
+                <!-- Thumbnail Section - Solo para snippets TEXT tipo HTML -->
+                <div class="form-group" id="thumbnailSection" style="display: none;">
+                    <label class="form-label">📸 Miniatura del Snippet HTML (opcional)</label>
+                    <div class="form-hint" style="margin-bottom: 12px;">
+                        Una imagen PEQUEÑA de vista previa de tu snippet HTML. Es solo un preview para la lista.
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <!-- Thumbnail Preview -->
+                        <div id="thumbnailPreviewContainer" style="flex-shrink: 0;">
+                            <div id="thumbnailPreview" style="width: 150px; height: 150px; border: 2px dashed rgba(0, 122, 255, 0.3); border-radius: 8px; display: flex; align-items: center; justify-content: center; background: rgba(248, 248, 250, 0.5); overflow: hidden; position: relative;">
+                                <span style="color: rgba(0, 0, 0, 0.4); font-size: 48px;">🖼️</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Thumbnail Actions -->
+                        <div style="flex: 1;">
+                            <button type="button" class="btn" onclick="pasteThumbnailFromClipboard()" style="margin-bottom: 8px; width: 100%;">
+                                📋 Pegar desde Portapapeles
+                            </button>
+                            <button type="button" class="btn" onclick="captureScreenshot()" style="margin-bottom: 8px; width: 100%;" id="captureScreenshotBtn">
+                                📸 Capturar Vista Previa HTML
+                            </button>
+                            <button type="button" class="btn" onclick="removeThumbnail()" style="width: 100%;">
+                                🗑️ Eliminar Miniatura
+                            </button>
+                            <div class="form-hint" style="margin-top: 12px; font-size: 12px; background: rgba(255, 193, 7, 0.1); padding: 8px; border-radius: 6px;">
+                                <strong>⚠️ IMPORTANTE:</strong><br>
+                                • Esta miniatura es SOLO para snippets de <strong>TEXTO</strong> con HTML<br>
+                                • Es un PREVIEW pequeño que aparece en la lista<br>
+                                • Para snippets de <strong>IMAGEN</strong>, usa el tipo 🖼️ Imagen arriba
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <!-- End of textContentSection -->
+
+                <!-- Hidden checkbox for compatibility - now controlled by toggle in toolbar -->
+                <input type="checkbox" id="enabledInput" checked style="display: none;">
+            </div>
+
+            <!-- Voice Commands Section -->
+            <div class="voice-section" id="voiceSection" style="display: none;">
+                <div class="card">
+                    <h2 style="margin-bottom: 24px; color: rgba(0, 0, 0, 0.87);">🎙️ Comandos de Voz</h2>
+                    
+                    <div style="text-align: center; padding: 40px 20px;">
+                        <div id="voiceStatus" style="margin-bottom: 24px;">
+                            <p style="color: rgba(0, 0, 0, 0.6); margin-bottom: 16px;">Presiona el botón y di un comando:</p>
+                            <div style="font-size: 13px; color: rgba(0, 0, 0, 0.5); line-height: 1.8; text-align: left; max-width: 500px; margin: 0 auto;">
+                                <p><strong>Ejemplos:</strong></p>
+                                <p>• "Crear snippet para firma de email"</p>
+                                <p>• "Buscar snippets de código"</p>
+                                <p>• "Mostrar estadísticas"</p>
+                            </div>
+                        </div>
+                        
+                        <button id="startVoiceBtn" class="btn btn-primary" style="width: 200px; height: 200px; border-radius: 50%; font-size: 64px; background: rgba(0, 122, 255, 0.1); border: 4px solid rgba(0, 122, 255, 0.3); transition: all 0.3s ease;">
+                            🎤
+                        </button>
+                        
+                        <div id="voiceTranscript" style="margin-top: 24px; padding: 16px; background: rgba(248, 248, 250, 0.7); border-radius: 10px; min-height: 60px; display: none;">
+                            <p style="color: rgba(0, 0, 0, 0.7); font-style: italic;"></p>
+                        </div>
+                        
+                        <div id="voiceResult" style="margin-top: 16px; padding: 16px; background: rgba(52, 199, 89, 0.1); border: 1px solid rgba(52, 199, 89, 0.3); border-radius: 10px; display: none;">
+                            <p style="color: rgba(0, 0, 0, 0.8);"></p>
+                        </div>
+                        
+                        <div id="voiceError" style="margin-top: 16px; padding: 16px; background: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.3); border-radius: 10px; display: none;">
+                            <p style="color: rgba(255, 59, 48, 0.9);"></p>
+                        </div>
+                    </div>
+
+                    <button class="btn-icon" onclick="hideVoice()" style="margin-top: 24px;">⬅️ Volver</button>
                 </div>
             </div>
         </div>
@@ -1023,6 +1298,20 @@ Puedes usar variables:
         const duplicateBtn = document.getElementById('duplicateBtn');
         const deleteBtn = document.getElementById('deleteBtn');
         const cancelBtn = document.getElementById('cancelBtn');
+        const enableToggle = document.getElementById('enableToggle');
+
+        // Toggle Switch Logic
+        enableToggle.addEventListener('click', () => {
+            const isActive = enableToggle.classList.toggle('active');
+            enabledInput.checked = isActive;
+            
+            const statusSpan = enableToggle.querySelector('.toggle-switch-status');
+            if (isActive) {
+                statusSpan.textContent = '✓ Habilitado';
+            } else {
+                statusSpan.textContent = '✗ Deshabilitado';
+            }
+        });
 
         // Inicializar Quill Editor
         let quill = new Quill('#editor-container', {
@@ -1043,10 +1332,14 @@ Puedes usar variables:
         // Toggle entre editor rico y plain text
         richInput.addEventListener('change', () => {
             const editorContainer = document.getElementById('editor-container');
+            const thumbnailSection = document.getElementById('thumbnailSection');
+            
             if (richInput.checked) {
-                // Modo WYSIWYG
+                // Modo WYSIWYG (HTML)
                 editorContainer.style.display = 'block';
                 contentInput.style.display = 'none';
+                thumbnailSection.style.display = 'block'; // Mostrar thumbnails para HTML
+                
                 // Transferir contenido de textarea a quill
                 if (contentInput.value) {
                     quill.root.innerHTML = contentInput.value;
@@ -1055,6 +1348,17 @@ Puedes usar variables:
                 // Modo plain text
                 editorContainer.style.display = 'none';
                 contentInput.style.display = 'block';
+                thumbnailSection.style.display = 'none'; // Ocultar thumbnails para texto
+                
+                // Limpiar thumbnail si cambia a texto
+                if (currentThumbnail) {
+                    const confirmClear = confirm('⚠️ Los thumbnails solo están disponibles para snippets HTML.\n¿Deseas eliminar el thumbnail actual?');
+                    if (confirmClear) {
+                        currentThumbnail = null;
+                        updateThumbnailPreview(null);
+                    }
+                }
+                
                 // Transferir contenido de quill a textarea (solo texto)
                 contentInput.value = quill.getText();
             }
@@ -1120,11 +1424,43 @@ Puedes usar variables:
                 const enabledBadge = snippet.enabled ? '' : '<span style="color: rgba(255,59,48,0.8); font-size: 11px;">●</span> ';
                 const usageCount = snippet.usage_count ? ` (${snippet.usage_count} usos)` : '';
                 
+                // Determinar tipo de snippet
+                const snippetType = snippet.snippet_type || 'text';
+                
+                // Thumbnail visual según tipo
+                let thumbnailHTML;
+                if (snippetType === 'image') {
+                    // Mostrar preview de imagen
+                    const hasImage = snippet.image_data && snippet.image_data.length > 0;
+                    thumbnailHTML = hasImage ? 
+                        `<div class="snippet-item-thumb-container" style="border-color: rgba(88, 86, 214, 0.5);">
+                            <img src="${snippet.image_data}" alt="Preview" />
+                        </div>` :
+                        `<div class="snippet-item-thumb-container">
+                            <div class="thumb-placeholder">🖼️</div>
+                        </div>`;
+                } else {
+                    // Snippet de texto: mostrar thumbnail si existe
+                    const hasThumbnail = snippet.thumbnail && snippet.thumbnail.length > 0;
+                    thumbnailHTML = hasThumbnail ? 
+                        `<div class="snippet-item-thumb-container">
+                            <img src="${snippet.thumbnail}" alt="Preview" />
+                        </div>` :
+                        `<div class="snippet-item-thumb-container">
+                            <div class="thumb-placeholder">📝</div>
+                        </div>`;
+                }
+                
                 return `
                     <div class="snippet-item ${currentSnippet?.id === snippet.id ? 'active' : ''}" 
                          data-id="${snippet.id}">
-                        <div class="snippet-item-name">${enabledBadge}${snippet.name}</div>
-                        <div class="snippet-item-abbr">${cleanAbbr ? ';' + cleanAbbr : 'Sin abreviatura'}${usageCount}</div>
+                        <div class="snippet-item-content">
+                            ${thumbnailHTML}
+                            <div class="snippet-item-info">
+                                <div class="snippet-item-name">${enabledBadge}${snippet.name}</div>
+                                <div class="snippet-item-abbr">${cleanAbbr ? ';' + cleanAbbr : 'Sin abreviatura'}${usageCount}</div>
+                            </div>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1174,11 +1510,30 @@ Puedes usar variables:
             quill.setContents([]); // Limpiar editor Quill
             richInput.checked = true; // Empezar con WYSIWYG por defecto
             enabledInput.checked = true;
+            
+            // Resetear tipo a TEXT
+            typeText.checked = true;
+            textContentSection.style.display = 'block';
+            imageUploadSection.style.display = 'none';
+            
+            // Limpiar imagen
+            currentImageData = null;
+            updateImagePreview(null);
+            
+            // Actualizar toggle
+            enableToggle.classList.add('active');
+            enableToggle.querySelector('.toggle-switch-status').textContent = '✓ Habilitado';
+            
             renderTags();
             
-            // Mostrar editor rico por defecto
+            // Limpiar thumbnail
+            currentThumbnail = null;
+            updateThumbnailPreview(null);
+            
+            // Mostrar editor rico por defecto y sección de thumbnails
             document.getElementById('editor-container').style.display = 'block';
             contentInput.style.display = 'none';
+            document.getElementById('thumbnailSection').style.display = 'block'; // Mostrar thumbnails (HTML por defecto)
             
             showEditor();
         }
@@ -1194,15 +1549,52 @@ Puedes usar variables:
             richInput.checked = snippet.is_rich;
             enabledInput.checked = snippet.enabled;
             
-            // Cargar contenido según el tipo
-            if (snippet.is_rich && snippet.content_html) {
-                quill.root.innerHTML = snippet.content_html;
-                document.getElementById('editor-container').style.display = 'block';
-                contentInput.style.display = 'none';
+            // Configurar tipo de snippet
+            const snippetType = snippet.snippet_type || 'text';
+            if (snippetType === 'image') {
+                typeImage.checked = true;
+                textContentSection.style.display = 'none';
+                imageUploadSection.style.display = 'block';
+                
+                // Cargar imagen
+                currentImageData = snippet.image_data || null;
+                updateImagePreview(currentImageData);
             } else {
-                contentInput.value = snippet.content_text || '';
-                document.getElementById('editor-container').style.display = 'none';
-                contentInput.style.display = 'block';
+                typeText.checked = true;
+                textContentSection.style.display = 'block';
+                imageUploadSection.style.display = 'none';
+                
+                // Cargar contenido según el tipo
+                if (snippet.is_rich && snippet.content_html) {
+                    quill.root.innerHTML = snippet.content_html;
+                    document.getElementById('editor-container').style.display = 'block';
+                    contentInput.style.display = 'none';
+                } else {
+                    contentInput.value = snippet.content_text || '';
+                    document.getElementById('editor-container').style.display = 'none';
+                    contentInput.style.display = 'block';
+                }
+                
+                // Cargar thumbnail existente si lo hay (solo para HTML)
+                const thumbnailSection = document.getElementById('thumbnailSection');
+                if (snippet.is_rich) {
+                    currentThumbnail = snippet.thumbnail || null;
+                    updateThumbnailPreview(currentThumbnail);
+                    thumbnailSection.style.display = 'block';
+                } else {
+                    currentThumbnail = null;
+                    updateThumbnailPreview(null);
+                    thumbnailSection.style.display = 'none';
+                }
+            }
+            
+            // Actualizar toggle
+            if (snippet.enabled) {
+                enableToggle.classList.add('active');
+                enableToggle.querySelector('.toggle-switch-status').textContent = '✓ Habilitado';
+            } else {
+                enableToggle.classList.remove('active');
+                enableToggle.querySelector('.toggle-switch-status').textContent = '✗ Deshabilitado';
             }
             
             renderTags();
@@ -1267,6 +1659,17 @@ Puedes usar variables:
             const isRich = richInput.checked;
             const enabled = enabledInput.checked;
             
+            // Determinar tipo de snippet
+            const snippetType = typeImage.checked ? 'image' : 'text';
+            
+            // Validaciones según tipo
+            if (snippetType === 'image') {
+                if (!currentImageData) {
+                    showToast('Por favor, agrega una imagen para el snippet', 'error');
+                    return;
+                }
+            }
+            
             // Obtener contenido según el modo
             let content;
             if (isRich) {
@@ -1278,14 +1681,17 @@ Puedes usar variables:
             const snippetData = {
                 name,
                 abbreviation: abbreviation || null,
+                snippet_type: snippetType,
                 tags: currentTags,
-                content_text: isRich ? null : content,
-                content_html: isRich ? content : null,
-                is_rich: isRich,
+                content_text: snippetType === 'text' ? (isRich ? null : content) : null,
+                content_html: snippetType === 'text' ? (isRich ? content : null) : null,
+                is_rich: snippetType === 'text' ? isRich : false,
+                image_data: snippetType === 'image' ? currentImageData : null,
                 scope_type: 'global',
                 scope_values: [],
                 variables: [],
-                enabled
+                enabled,
+                thumbnail: (snippetType === 'text' && isRich && currentThumbnail) ? currentThumbnail : null // Solo guardar thumbnail si es TEXT con HTML
             };
 
             try {
@@ -1496,6 +1902,194 @@ Puedes usar variables:
             snippetPreview.innerHTML = preview;
         }
 
+        // SCREENSHOT LIBRARY FUNCTIONALITY
+        let currentThumbnail = null;
+
+        async function captureScreenshot() {
+            try {
+                const previewContainer = document.getElementById('snippetPreview');
+                if (!previewContainer || !previewContainer.innerHTML.trim()) {
+                    showToast('⚠️ No hay vista previa para capturar. Asegúrate de que el snippet tenga contenido HTML.', 'error');
+                    return;
+                }
+
+                showLoading('Capturando screenshot...');
+                
+                // Capturar el preview actual
+                const canvas = await html2canvas(previewContainer, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                // Convertir a base64
+                currentThumbnail = canvas.toDataURL('image/png');
+                
+                // Mostrar preview del thumbnail
+                updateThumbnailPreview(currentThumbnail);
+                
+                hideLoading();
+                showToast('✅ Screenshot capturado correctamente', 'success');
+            } catch (error) {
+                console.error('Error capturing screenshot:', error);
+                hideLoading();
+                showToast('❌ Error al capturar screenshot', 'error');
+            }
+        }
+
+        async function pasteThumbnailFromClipboard() {
+            try {
+                // Leer imagen del portapapeles
+                const items = await navigator.clipboard.read();
+                
+                for (const item of items) {
+                    // Buscar imágenes en el portapapeles
+                    const imageTypes = item.types.filter(type => type.startsWith('image/'));
+                    
+                    if (imageTypes.length === 0) {
+                        showToast('⚠️ No hay imagen en el portapapeles', 'error');
+                        return;
+                    }
+
+                    showLoading('Procesando imagen...');
+                    
+                    const blob = await item.getType(imageTypes[0]);
+                    
+                    // Convertir blob a base64
+                    const reader = new FileReader();
+                    reader.onloadend = function() {
+                        currentThumbnail = reader.result;
+                        updateThumbnailPreview(currentThumbnail);
+                        hideLoading();
+                        showToast('✅ Imagen pegada correctamente', 'success');
+                    };
+                    reader.readAsDataURL(blob);
+                    return;
+                }
+            } catch (error) {
+                console.error('Error pasting from clipboard:', error);
+                hideLoading();
+                showToast('❌ Error al pegar imagen. Copia una imagen primero (Ctrl+C sobre una imagen)', 'error');
+            }
+        }
+
+        function updateThumbnailPreview(dataUrl) {
+            const preview = document.getElementById('thumbnailPreview');
+            if (dataUrl) {
+                preview.innerHTML = `<img src="${dataUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">`;
+                preview.style.border = '2px solid rgba(52, 199, 89, 0.5)';
+            } else {
+                preview.innerHTML = '<span style="color: rgba(0, 0, 0, 0.4); font-size: 48px;">🖼️</span>';
+                preview.style.border = '2px dashed rgba(0, 122, 255, 0.3)';
+            }
+        }
+
+        function removeThumbnail() {
+            currentThumbnail = null;
+            updateThumbnailPreview(null);
+            showToast('🗑️ Miniatura eliminada', 'success');
+        }
+
+        // ============================================
+        // IMAGE SNIPPET FUNCTIONS
+        // ============================================
+        let currentImageData = null;
+
+        // Toggle entre tipo TEXT e IMAGE
+        const typeText = document.getElementById('typeText');
+        const typeImage = document.getElementById('typeImage');
+        const textContentSection = document.getElementById('textContentSection');
+        const imageUploadSection = document.getElementById('imageUploadSection');
+
+        typeText.addEventListener('change', () => {
+            if (typeText.checked) {
+                textContentSection.style.display = 'block';
+                imageUploadSection.style.display = 'none';
+            }
+        });
+
+        typeImage.addEventListener('change', () => {
+            if (typeImage.checked) {
+                textContentSection.style.display = 'none';
+                imageUploadSection.style.display = 'block';
+            }
+        });
+
+        async function pasteImageFromClipboard() {
+            showLoading();
+            try {
+                const clipboardItems = await navigator.clipboard.read();
+                
+                for (const item of clipboardItems) {
+                    for (const type of item.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await item.getType(type);
+                            const reader = new FileReader();
+                            
+                            reader.onload = (e) => {
+                                currentImageData = e.target.result; // Base64
+                                updateImagePreview(currentImageData);
+                                showToast('✅ Imagen pegada desde portapapeles', 'success');
+                            };
+                            
+                            reader.readAsDataURL(blob);
+                            hideLoading();
+                            return;
+                        }
+                    }
+                }
+                
+                hideLoading();
+                showToast('❌ No hay imagen en el portapapeles', 'error');
+            } catch (err) {
+                console.error('Error al pegar imagen:', err);
+                hideLoading();
+                showToast('❌ Error al pegar imagen. Copia una imagen primero (Ctrl+C sobre una imagen)', 'error');
+            }
+        }
+
+        function selectImageFile() {
+            const fileInput = document.getElementById('imageFileInput');
+            fileInput.click();
+        }
+
+        document.getElementById('imageFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.match(/^image\/(png|jpeg|gif)$/)) {
+                showToast('❌ Formato no soportado. Usa PNG, JPG o GIF', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImageData = e.target.result; // Base64
+                updateImagePreview(currentImageData);
+                showToast('✅ Imagen cargada correctamente', 'success');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function updateImagePreview(dataUrl) {
+            const preview = document.getElementById('imagePreview');
+            if (dataUrl) {
+                preview.innerHTML = `<img src="${dataUrl}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 10px;">`;
+                preview.style.border = '2px solid rgba(52, 199, 89, 0.5)';
+            } else {
+                preview.innerHTML = '<span style="color: rgba(0, 0, 0, 0.4); font-size: 64px;">🖼️</span>';
+                preview.style.border = '2px dashed rgba(0, 122, 255, 0.3)';
+            }
+        }
+
+        function removeImage() {
+            currentImageData = null;
+            updateImagePreview(null);
+            showToast('🗑️ Imagen eliminada', 'success');
+        }
+
         // 2. ESTADÍSTICAS
         const statsBtn = document.getElementById('statsBtn');
         const statsSection = document.getElementById('statsSection');
@@ -1512,11 +2106,33 @@ Puedes usar variables:
                 // Obtener estadísticas de la API
                 const stats = await ipcRenderer.invoke('get-stats');
                 
-                // Actualizar valores
-                document.getElementById('totalUses').textContent = stats.total_uses || 0;
+                // Calcular métricas avanzadas
+                const totalUses = stats.total_uses || 0;
+                const avgCharsPerSnippet = 150; // Promedio estimado de caracteres por snippet
+                const avgTypingSpeed = 40; // palabras por minuto = ~200 caracteres/min
+                const charsTyped = totalUses * avgCharsPerSnippet;
+                const minutesSaved = charsTyped / 200;
+                const hoursSaved = (minutesSaved / 60).toFixed(1);
+                
+                // Calcular productividad (comparado con escritura manual)
+                const productivity = totalUses > 0 ? Math.min(100, Math.round((totalUses / 10) * 100)) : 0;
+                
+                // Calcular racha (días consecutivos con uso)
+                const streak = calculateStreak(stats);
+                
+                // Actualizar valores básicos
+                document.getElementById('totalUses').textContent = totalUses;
                 document.getElementById('totalSnippets').textContent = snippets.length;
                 document.getElementById('enabledSnippets').textContent = 
                     snippets.filter(s => s.enabled).length;
+                
+                // Actualizar métricas avanzadas
+                document.getElementById('timeSaved').textContent = hoursSaved + 'h';
+                document.getElementById('productivity').textContent = productivity + '%';
+                document.getElementById('streak').textContent = streak;
+                
+                // Generar insights personalizados
+                generateProductivityInsights(stats, totalUses, hoursSaved, productivity);
 
                 // Renderizar top snippets list
                 const topSnippetsList = document.getElementById('topSnippetsList');
@@ -1659,6 +2275,60 @@ Puedes usar variables:
             }
         }
 
+        function calculateStreak(stats) {
+            // Por ahora, calcular racha basada en el número de usos recientes
+            // En una implementación completa, se guardarían timestamps
+            const totalUses = stats.total_uses || 0;
+            if (totalUses === 0) return 0;
+            if (totalUses < 5) return 1;
+            if (totalUses < 20) return Math.floor(totalUses / 5);
+            if (totalUses < 50) return Math.floor(totalUses / 10);
+            return Math.min(30, Math.floor(totalUses / 20));
+        }
+
+        function generateProductivityInsights(stats, totalUses, hoursSaved, productivity) {
+            const insightsDiv = document.getElementById('productivityInsights');
+            const insights = [];
+
+            // Insight sobre tiempo ahorrado
+            if (hoursSaved > 10) {
+                insights.push(`🎉 ¡Increíble! Has ahorrado <strong>${hoursSaved} horas</strong> usando snippets. Eso es casi ${Math.floor(hoursSaved / 8)} días laborales.`);
+            } else if (hoursSaved > 1) {
+                insights.push(`⏱️ Has ahorrado <strong>${hoursSaved} horas</strong> esta semana. ¡Sigue así!`);
+            } else {
+                insights.push(`💡 Estás comenzando bien. Usa más snippets para ahorrar tiempo.`);
+            }
+
+            // Insight sobre snippet más usado
+            if (stats.top_snippets && stats.top_snippets.length > 0) {
+                const topSnippet = stats.top_snippets[0];
+                insights.push(`🏆 Tu snippet favorito es "<strong>${topSnippet.name}</strong>" con ${topSnippet.usage_count} usos.`);
+            }
+
+            // Insight sobre productividad
+            if (productivity >= 80) {
+                insights.push(`📈 Tu productividad está en <strong>${productivity}%</strong>. ¡Eres un maestro de los snippets!`);
+            } else if (productivity >= 50) {
+                insights.push(`📊 Productividad: <strong>${productivity}%</strong>. Vas por buen camino.`);
+            } else {
+                insights.push(`🚀 Crea más snippets para tareas repetitivas y aumenta tu productividad.`);
+            }
+
+            // Sugerencias basadas en patrones
+            const enabledCount = snippets.filter(s => s.enabled).length;
+            const disabledCount = snippets.length - enabledCount;
+            if (disabledCount > 5) {
+                insights.push(`⚠️ Tienes <strong>${disabledCount} snippets deshabilitados</strong>. ¿Los necesitas o puedes eliminarlos?`);
+            }
+
+            // Recomendaciones
+            if (snippets.length < 10) {
+                insights.push(`💡 <strong>Consejo:</strong> Identifica 3 frases que escribes diariamente y crea snippets para ellas.`);
+            }
+
+            insightsDiv.innerHTML = insights.map(insight => `<p style="margin: 8px 0;">• ${insight}</p>`).join('');
+        }
+
         function hideStats() {
             statsSection.style.display = 'none';
             emptyState.style.display = 'block';
@@ -1730,6 +2400,239 @@ Puedes usar variables:
                 hideLoading();
                 console.error('Error importing snippets:', error);
                 showToast('❌ Error al importar: ' + error.message, 'error');
+            }
+        }
+
+        // 4. VOICE COMMANDS
+        const voiceBtn = document.getElementById('voiceBtn');
+        const voiceSection = document.getElementById('voiceSection');
+        const startVoiceBtn = document.getElementById('startVoiceBtn');
+        const voiceTranscript = document.getElementById('voiceTranscript');
+        const voiceResult = document.getElementById('voiceResult');
+        const voiceError = document.getElementById('voiceError');
+
+        let recognition = null;
+        let isListening = false;
+
+        // Verificar que todos los elementos existen
+        if (!voiceBtn || !voiceSection || !startVoiceBtn || !voiceTranscript || !voiceResult || !voiceError) {
+            console.error('Voice elements not found in DOM');
+        } else {
+            // Inicializar Web Speech API solo si los elementos existen
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'es-ES';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.onstart = () => {
+                    isListening = true;
+                    if (startVoiceBtn) {
+                        startVoiceBtn.style.background = 'rgba(255, 59, 48, 0.2)';
+                        startVoiceBtn.style.borderColor = 'rgba(255, 59, 48, 0.5)';
+                        startVoiceBtn.style.transform = 'scale(1.1)';
+                        startVoiceBtn.textContent = '🔴';
+                    }
+                    if (voiceTranscript) {
+                        voiceTranscript.style.display = 'block';
+                        const p = voiceTranscript.querySelector('p');
+                        if (p) p.textContent = '🎤 Escuchando...';
+                    }
+                    if (voiceResult) voiceResult.style.display = 'none';
+                    if (voiceError) voiceError.style.display = 'none';
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    if (voiceTranscript) {
+                        const p = voiceTranscript.querySelector('p');
+                        if (p) p.textContent = `📝 "${transcript}"`;
+                    }
+                    processVoiceCommand(transcript);
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Voice recognition error:', event.error);
+                    if (voiceError) {
+                        voiceError.style.display = 'block';
+                        const p = voiceError.querySelector('p');
+                        if (p) {
+                            p.textContent = '❌ Error: ' + 
+                                (event.error === 'no-speech' ? 'No se detectó voz' : 
+                                 event.error === 'not-allowed' ? 'Permiso denegado para usar el micrófono' : 
+                                 event.error === 'network' ? 'Error de red' :
+                                 'Error de reconocimiento: ' + event.error);
+                        }
+                    }
+                    resetVoiceButton();
+                };
+
+                recognition.onend = () => {
+                    resetVoiceButton();
+                };
+            } else {
+                console.warn('Speech Recognition API not available');
+            }
+
+            // Event listeners
+            if (voiceBtn) {
+                voiceBtn.addEventListener('click', showVoice);
+            }
+
+            if (startVoiceBtn) {
+                startVoiceBtn.addEventListener('click', () => {
+                    if (!recognition) {
+                        if (voiceError) {
+                            voiceError.style.display = 'block';
+                            const p = voiceError.querySelector('p');
+                            if (p) p.textContent = '❌ Reconocimiento de voz no disponible en este navegador';
+                        }
+                        return;
+                    }
+
+                    if (isListening) {
+                        recognition.stop();
+                    } else {
+                        try {
+                            recognition.start();
+                        } catch (error) {
+                            console.error('Error starting recognition:', error);
+                            if (voiceError) {
+                                voiceError.style.display = 'block';
+                                const p = voiceError.querySelector('p');
+                                if (p) p.textContent = '❌ Error al iniciar: ' + error.message;
+                            }
+                            resetVoiceButton();
+                        }
+                    }
+                });
+            }
+        }
+
+        function showVoice() {
+            if (!recognition) {
+                showToast('❌ Reconocimiento de voz no disponible en este navegador', 'error');
+                return;
+            }
+
+            if (emptyState) emptyState.style.display = 'none';
+            if (editorForm) editorForm.style.display = 'none';
+            if (statsSection) statsSection.style.display = 'none';
+            if (voiceSection) voiceSection.style.display = 'block';
+
+            // Reset UI
+            if (voiceTranscript) voiceTranscript.style.display = 'none';
+            if (voiceResult) voiceResult.style.display = 'none';
+            if (voiceError) voiceError.style.display = 'none';
+        }
+
+        function hideVoice() {
+            if (isListening && recognition) {
+                recognition.stop();
+            }
+            if (voiceSection) voiceSection.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'block';
+        }
+
+        function resetVoiceButton() {
+            isListening = false;
+            if (startVoiceBtn) {
+                startVoiceBtn.style.background = 'rgba(0, 122, 255, 0.1)';
+                startVoiceBtn.style.borderColor = 'rgba(0, 122, 255, 0.3)';
+                startVoiceBtn.style.transform = 'scale(1)';
+                startVoiceBtn.textContent = '🎤';
+            }
+        }
+
+        async function processVoiceCommand(transcript) {
+            const lowerTranscript = transcript.toLowerCase();
+
+            try {
+                // Comando: Crear snippet
+                if (lowerTranscript.includes('crear snippet') || lowerTranscript.includes('nuevo snippet')) {
+                    const prompt = lowerTranscript.replace(/crear snippet|nuevo snippet/gi, '').replace(/para|de/gi, '').trim();
+                    if (voiceResult) {
+                        voiceResult.style.display = 'block';
+                        const p = voiceResult.querySelector('p');
+                        if (p) p.textContent = `✅ Abriendo editor para: "${prompt}"`;
+                    }
+                    
+                    setTimeout(() => {
+                        hideVoice();
+                        newSnippet();
+                        if (prompt && nameInput) {
+                            nameInput.value = prompt.charAt(0).toUpperCase() + prompt.slice(1);
+                            nameInput.focus();
+                        }
+                    }, 1500);
+                    return;
+                }
+
+                // Comando: Buscar snippets
+                if (lowerTranscript.includes('buscar') || lowerTranscript.includes('encontrar')) {
+                    const query = lowerTranscript.replace(/buscar|encontrar|snippet|snippets|de|para/gi, '').trim();
+                    if (voiceResult) {
+                        voiceResult.style.display = 'block';
+                        const p = voiceResult.querySelector('p');
+                        if (p) p.textContent = `🔍 Buscando: "${query}"`;
+                    }
+                    
+                    setTimeout(() => {
+                        hideVoice();
+                        if (searchInput) {
+                            searchInput.value = query;
+                            searchInput.dispatchEvent(new Event('input'));
+                            searchInput.focus();
+                        }
+                    }, 1500);
+                    return;
+                }
+
+                // Comando: Mostrar estadísticas
+                if (lowerTranscript.includes('estadísticas') || lowerTranscript.includes('stats') || lowerTranscript.includes('métricas')) {
+                    if (voiceResult) {
+                        voiceResult.style.display = 'block';
+                        const p = voiceResult.querySelector('p');
+                        if (p) p.textContent = '📊 Abriendo estadísticas...';
+                    }
+                    
+                    setTimeout(() => {
+                        hideVoice();
+                        showStats();
+                    }, 1500);
+                    return;
+                }
+
+                // Comando: Exportar
+                if (lowerTranscript.includes('exportar') || lowerTranscript.includes('guardar backup')) {
+                    if (voiceResult) {
+                        voiceResult.style.display = 'block';
+                        const p = voiceResult.querySelector('p');
+                        if (p) p.textContent = '💾 Iniciando exportación...';
+                    }
+                    
+                    setTimeout(() => {
+                        hideVoice();
+                        exportSnippets();
+                    }, 1500);
+                    return;
+                }
+
+                // Comando no reconocido
+                if (voiceError) {
+                    voiceError.style.display = 'block';
+                    const p = voiceError.querySelector('p');
+                    if (p) p.textContent = '❓ Comando no reconocido. Intenta con: "crear snippet", "buscar", "estadísticas"';
+                }
+
+            } catch (error) {
+                console.error('Error processing voice command:', error);
+                if (voiceError) {
+                    voiceError.style.display = 'block';
+                    const p = voiceError.querySelector('p');
+                    if (p) p.textContent = '❌ Error procesando comando: ' + error.message;
+                }
             }
         }
 

@@ -88,9 +88,12 @@ function createMainWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
-        show: false,
-        transparent: true,
-        backgroundColor: '#00000000',
+        minWidth: 800,
+        minHeight: 600,
+        show: true, // Mostrar inmediatamente
+        resizable: true, // Explícitamente redimensionable
+        transparent: false, // Desactivar transparencia para mejor visibilidad
+        backgroundColor: '#ffffff',
         frame: true,
         icon: createAppIcon(),
         webPreferences: {
@@ -104,6 +107,8 @@ function createMainWindow() {
 
     mainWindow.webContents.on('did-finish-load', () => {
         console.log('[ApareText] Manager window loaded successfully');
+        mainWindow.show();
+        mainWindow.focus();
     });
 
     mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
@@ -246,6 +251,37 @@ async function insertText(text) {
 }
 
 /**
+ * Copiar imagen al clipboard desde Base64
+ */
+async function copyImageToClipboard(base64Data) {
+    try {
+        // Extraer el contenido Base64 (quitar el prefijo data:image/...)
+        const base64Content = base64Data.includes(',') 
+            ? base64Data.split(',')[1] 
+            : base64Data;
+        
+        // Crear buffer desde Base64
+        const buffer = Buffer.from(base64Content, 'base64');
+        
+        // Crear nativeImage desde el buffer
+        const image = nativeImage.createFromBuffer(buffer);
+        
+        if (image.isEmpty()) {
+            throw new Error('Invalid image data');
+        }
+        
+        // Copiar al clipboard
+        clipboard.writeImage(image);
+        
+        console.log('[ApareText] Image copied to clipboard successfully');
+        return true;
+    } catch (error) {
+        console.error('[ApareText] Error copying image to clipboard:', error);
+        throw error;
+    }
+}
+
+/**
  * Inicialización de la aplicación
  */
 app.whenReady().then(async () => {
@@ -259,7 +295,7 @@ app.whenReady().then(async () => {
             type: 'warning',
             title: 'API Server Not Running',
             message: 'The Python API server is not running.',
-            detail: 'Please start it with:\npython -m server.main\n\nContinue anyway?',
+            detail: 'Please start it with:\npython -m uvicorn server.api:app --reload --port 46321\n\nContinue anyway?',
             buttons: ['Quit', 'Continue']
         });
         
@@ -275,14 +311,8 @@ app.whenReady().then(async () => {
     createTray();
     registerHotkeys();
 
-    // MODO DEBUG: Abrir ventana principal automáticamente
-    setTimeout(() => {
-        if (mainWindow) {
-            mainWindow.show();
-            mainWindow.focus();
-            console.log('[ApareText] Manager window opened (debug mode)');
-        }
-    }, 1000);
+    // NO abrir manager automáticamente, solo mostrar paleta cuando se presiona Ctrl+Space
+    // El manager se abre desde el menú del tray o con el atajo
 
     console.log('[ApareText] Ready! Press Ctrl+Space to open palette');
 });
@@ -323,6 +353,31 @@ ipcMain.handle('search-snippets', async (event, query) => {
 
 ipcMain.handle('expand-snippet', async (event, snippetId, variables = {}) => {
     try {
+        console.log('[EXPAND] 🔍 Fetching snippet:', snippetId);
+        // Primero obtener el snippet para verificar su tipo
+        const snippetResponse = await axios.get(`${API_URL}/api/snippets/${snippetId}`);
+        const snippet = snippetResponse.data;
+        console.log('[EXPAND] 📦 Snippet type:', snippet.snippet_type, '| Name:', snippet.name);
+        
+        // Si es snippet tipo IMAGE, copiar imagen directamente al clipboard
+        if (snippet.snippet_type === 'image') {
+            if (!snippet.image_data) {
+                throw new Error('El snippet de imagen no tiene datos de imagen');
+            }
+            
+            await copyImageToClipboard(snippet.image_data);
+            
+            // Ocultar paleta DESPUÉS de copiar
+            setTimeout(() => {
+                if (paletteWindow && !paletteWindow.isDestroyed()) {
+                    paletteWindow.hide();
+                }
+            }, 100);
+            
+            return { success: true, type: 'image' };
+        }
+        
+        // Si es snippet tipo TEXT, usar el endpoint de expansión normal
         const response = await axios.post(`${API_URL}/api/snippets/expand`, {
             snippet_id: snippetId,
             variables: variables,
@@ -342,7 +397,7 @@ ipcMain.handle('expand-snippet', async (event, snippetId, variables = {}) => {
             }
         }, 100);
 
-        return { success: true };
+        return { success: true, type: 'text' };
 
     } catch (error) {
         console.error('Error expanding snippet:', error);

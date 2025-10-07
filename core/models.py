@@ -28,6 +28,13 @@ class VariableType(str, Enum):
     CHECKBOX = "checkbox"
 
 
+class SnippetType(str, Enum):
+    """Tipos de snippets."""
+    
+    TEXT = "text"  # Snippet de texto (puede ser plain text o HTML)
+    IMAGE = "image"  # Snippet de imagen (guarda y pega imágenes)
+
+
 class ScopeType(str, Enum):
     """Tipos de scope para snippets."""
 
@@ -45,10 +52,13 @@ class SnippetDB(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
     name = Column(String, nullable=False, index=True)
     abbreviation = Column(String, nullable=True, index=True)
+    snippet_type = Column(String, default=SnippetType.TEXT.value)  # 'text' o 'image'
     tags = Column(String, nullable=True)  # CSV: "twitter,outreach,morning"
     content_text = Column(Text, nullable=True)
     content_html = Column(Text, nullable=True)
     is_rich = Column(Boolean, default=False)
+    image_data = Column(Text, nullable=True)  # Base64 image data para snippets tipo IMAGE
+    thumbnail = Column(Text, nullable=True)  # Preview thumbnail (solo para tipo TEXT con HTML)
     scope_type = Column(String, default=ScopeType.GLOBAL.value)
     scope_values = Column(Text, nullable=True)  # JSON array
     caret_marker = Column(String, default="{{|}}")
@@ -144,10 +154,13 @@ class Snippet(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str = Field(..., min_length=1, max_length=200)
     abbreviation: Optional[str] = Field(None, max_length=50)
+    snippet_type: SnippetType = SnippetType.TEXT
     tags: list[str] = Field(default_factory=list)
     content_text: Optional[str] = None
     content_html: Optional[str] = None
     is_rich: bool = False
+    image_data: Optional[str] = None  # Base64 image data para snippets tipo IMAGE
+    thumbnail: Optional[str] = None  # Preview thumbnail (solo para tipo TEXT con HTML)
     scope_type: ScopeType = ScopeType.GLOBAL
     scope_values: list[str] = Field(default_factory=list)
     caret_marker: str = "{{|}}"

@@ -681,7 +681,17 @@
             }
 
             resultsContainer.innerHTML = filteredSnippets.map((snippet, index) => {
-                const preview = snippet.content_text || snippet.content_html || '';
+                const snippetType = snippet.snippet_type || 'text';
+                const typeIcon = snippetType === 'image' ? '🖼️' : '📝';
+                
+                // Para snippets IMAGE, mostrar tipo; para TEXT, mostrar preview
+                let preview = '';
+                if (snippetType === 'image') {
+                    preview = '📋 Imagen (se copiará al portapapeles)';
+                } else {
+                    preview = snippet.content_text || snippet.content_html || '';
+                }
+                
                 // Limpiar la abreviatura para quitar el ; si ya lo tiene
                 const cleanAbbr = snippet.abbreviation ? 
                     snippet.abbreviation.replace(/^;+/, '') : '';
@@ -690,7 +700,7 @@
                     <div class="snippet-item ${index === selectedIndex ? 'selected' : ''}" 
                          data-index="${index}">
                         <div class="snippet-name">
-                            ${snippet.name}
+                            ${typeIcon} ${snippet.name}
                             ${cleanAbbr ? 
                                 `<span class="snippet-abbr">;${cleanAbbr}</span>` : 
                                 ''}
@@ -731,7 +741,12 @@
                     console.error('Error expanding snippet:', result.error);
                     showToast('Error al expandir snippet: ' + result.error, 'error');
                 } else {
-                    showToast(`✨ "${snippet.name}" copiado al portapapeles`, 'success', 2000);
+                    // Mensaje diferente según tipo de snippet
+                    if (result.type === 'image') {
+                        showToast(`🖼️ "${snippet.name}" copiado al portapapeles (Ctrl+V para pegar)`, 'success', 3000);
+                    } else {
+                        showToast(`✨ "${snippet.name}" copiado al portapapeles`, 'success', 2000);
+                    }
                     // Cerrar palette después de copiar
                     setTimeout(() => window.blur(), 500);
                 }

@@ -55,10 +55,13 @@ class SnippetCreate(BaseModel):
 
     name: str
     abbreviation: Optional[str] = None
+    snippet_type: str = "text"  # 'text' o 'image'
     tags: list[str] = []
     content_text: Optional[str] = None
     content_html: Optional[str] = None
     is_rich: bool = False
+    image_data: Optional[str] = None  # Base64 image data para snippets tipo IMAGE
+    thumbnail: Optional[str] = None  # Base64 preview para snippets tipo TEXT con HTML
     scope_type: str = "global"
     scope_values: list[str] = []
     variables: list[SnippetVariable] = []
@@ -69,10 +72,13 @@ class SnippetUpdate(BaseModel):
 
     name: Optional[str] = None
     abbreviation: Optional[str] = None
+    snippet_type: Optional[str] = None  # 'text' o 'image'
     tags: Optional[list[str]] = None
     content_text: Optional[str] = None
     content_html: Optional[str] = None
     is_rich: Optional[bool] = None
+    image_data: Optional[str] = None  # Base64 image data para snippets tipo IMAGE
+    thumbnail: Optional[str] = None  # Base64 preview para snippets tipo TEXT con HTML
     scope_type: Optional[str] = None
     scope_values: Optional[list[str]] = None
     variables: Optional[list[SnippetVariable]] = None
@@ -157,10 +163,13 @@ async def create_snippet(snippet_data: SnippetCreate):
     snippet = Snippet(
         name=snippet_data.name,
         abbreviation=snippet_data.abbreviation,
+        snippet_type=snippet_data.snippet_type,
         tags=snippet_data.tags,
         content_text=snippet_data.content_text,
         content_html=snippet_data.content_html,
         is_rich=snippet_data.is_rich,
+        image_data=snippet_data.image_data,
+        thumbnail=snippet_data.thumbnail,
         scope_type=snippet_data.scope_type,
         scope_values=snippet_data.scope_values,
         variables=snippet_data.variables,

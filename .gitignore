@@ -39,6 +39,13 @@ ENV/
 *.sqlite
 *.sqlite3
 
+# Temporary migration scripts
+check_snippets.py
+clean_empty_snippets.py
+fix_empty_snippet.py
+migrate_*.py
+test_quick_wins.py
+
 # Logs
 *.log
 
