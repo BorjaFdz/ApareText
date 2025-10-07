@@ -239,7 +239,7 @@ async function insertText(text) {
  * Inicialización de la aplicación
  */
 app.whenReady().then(async () => {
-    console.log('🚀 ApareText starting...');
+    console.log('[ApareText] Starting...');
 
     // Verificar API
     const apiAvailable = await checkApiServer();
@@ -265,7 +265,7 @@ app.whenReady().then(async () => {
     createTray();
     registerHotkeys();
 
-    console.log('✅ Ready! Press Ctrl+Space to open palette');
+    console.log('[ApareText] Ready! Press Ctrl+Space to open palette');
 });
 
 /**
