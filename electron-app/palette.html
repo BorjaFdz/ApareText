@@ -193,30 +193,68 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            padding: 9px 15px;
+            padding: 11px 18px;
             font-size: 13px;
             font-weight: 500;
-            background: rgba(255, 255, 255, 0.9);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.85), rgba(240, 240, 245, 0.9));
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            border: 1.5px solid rgba(255, 255, 255, 0.8);
+            border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s ease;
-            color: rgba(0, 0, 0, 0.7);
+            color: rgba(0, 0, 0, 0.75);
             white-space: nowrap;
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.08),
+                inset 0 1px 2px rgba(255, 255, 255, 0.9),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toolbar-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 25px;
+            padding: 1.5px;
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.9), 
+                rgba(200, 200, 210, 0.4));
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.8;
         }
 
         .toolbar-button:hover {
-            background: rgba(0, 122, 255, 0.12);
-            border-color: rgba(0, 122, 255, 0.3);
-            color: rgb(0, 122, 255);
-            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
+            background: linear-gradient(145deg, rgba(50, 50, 60, 0.95), rgba(30, 30, 40, 0.98));
+            border-color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.95);
+            transform: translateY(-1px);
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.15),
+                inset 0 1px 2px rgba(255, 255, 255, 0.1),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .toolbar-button:hover::before {
+            background: linear-gradient(145deg, 
+                rgba(255, 255, 255, 0.7), 
+                rgba(150, 150, 160, 0.3));
         }
 
         .toolbar-button:active {
-            transform: scale(0.98);
-            box-shadow: 0 1px 3px rgba(0, 122, 255, 0.2);
+            transform: translateY(0) scale(0.98);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.12),
+                inset 0 2px 4px rgba(0, 0, 0, 0.15);
         }
 
         .toolbar-info {
@@ -224,6 +262,76 @@
             font-weight: 500;
             color: rgba(0, 0, 0, 0.4);
             letter-spacing: 0.3px;
+        }
+
+        /* Filtro de Tags */
+        .tag-filter-container {
+            padding: 8px 20px 16px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            flex-shrink: 0;
+        }
+
+        .tag-filter-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.5);
+            margin-bottom: 8px;
+            display: block;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .tag-filter-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .filter-tag {
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: rgba(0, 0, 0, 0.6);
+            user-select: none;
+        }
+
+        .filter-tag:hover {
+            background: rgba(0, 122, 255, 0.08);
+            border-color: rgba(0, 122, 255, 0.2);
+            color: rgba(0, 122, 255, 0.9);
+        }
+
+        .filter-tag.active {
+            background: linear-gradient(145deg, rgba(0, 122, 255, 0.9), rgba(0, 100, 220, 0.95));
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            box-shadow: 
+                0 2px 8px rgba(0, 122, 255, 0.3),
+                inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .filter-tag.active:hover {
+            background: linear-gradient(145deg, rgba(0, 140, 255, 1), rgba(0, 110, 230, 1));
+            box-shadow: 
+                0 3px 12px rgba(0, 122, 255, 0.4),
+                inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        }
+
+        .tag-count {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-left: 4px;
+        }
+
+        .filter-tag.active .tag-count {
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -237,6 +345,12 @@
                 autofocus
                 id="searchInput"
             >
+        </div>
+        <div class="tag-filter-container" id="tagFilterContainer" style="display: none;">
+            <span class="tag-filter-label">Filter by Tags</span>
+            <div class="tag-filter-list" id="tagFilterList">
+                <!-- Tags se generarán dinámicamente -->
+            </div>
         </div>
         <div class="results" id="results">
             <div class="empty-state">
@@ -267,9 +381,12 @@
         let allSnippets = [];
         let filteredSnippets = [];
         let selectedIndex = 0;
+        let activeTags = new Set(); // Tags actualmente seleccionados para filtrar
 
         const searchInput = document.getElementById('searchInput');
         const resultsContainer = document.getElementById('results');
+        const tagFilterContainer = document.getElementById('tagFilterContainer');
+        const tagFilterList = document.getElementById('tagFilterList');
 
         // Cargar snippets al abrir
         window.addEventListener('focus', async () => {
@@ -293,24 +410,75 @@
                 console.log('Snippets loaded:', allSnippets.length, allSnippets);
                 filteredSnippets = allSnippets;
                 selectedIndex = 0;
+                activeTags.clear();
+                renderTagFilters();
                 renderResults();
             } catch (error) {
                 console.error('Error loading snippets:', error);
             }
         }
 
-        // Búsqueda en tiempo real
-        searchInput.addEventListener('input', async (e) => {
-            const query = e.target.value.trim().toLowerCase();
+        // Renderizar filtros de tags
+        function renderTagFilters() {
+            // Recopilar todos los tags únicos con su conteo
+            const tagCounts = {};
+            allSnippets.forEach(snippet => {
+                if (snippet.tags && Array.isArray(snippet.tags)) {
+                    snippet.tags.forEach(tag => {
+                        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                    });
+                }
+            });
 
-            console.log('Search query:', query);
+            const tags = Object.keys(tagCounts).sort();
+            
+            if (tags.length === 0) {
+                tagFilterContainer.style.display = 'none';
+                return;
+            }
 
-            if (!query) {
-                filteredSnippets = allSnippets;
-                console.log('Empty query, showing all snippets:', filteredSnippets.length);
-            } else {
-                // Búsqueda fuzzy simple
-                filteredSnippets = allSnippets.filter(snippet => {
+            tagFilterContainer.style.display = 'block';
+            tagFilterList.innerHTML = tags.map(tag => `
+                <div class="filter-tag" data-tag="${tag}">
+                    <span>${tag}</span>
+                    <span class="tag-count">(${tagCounts[tag]})</span>
+                </div>
+            `).join('');
+
+            // Agregar event listeners a los tags
+            document.querySelectorAll('.filter-tag').forEach(tagEl => {
+                tagEl.addEventListener('click', () => {
+                    const tag = tagEl.dataset.tag;
+                    if (activeTags.has(tag)) {
+                        activeTags.delete(tag);
+                        tagEl.classList.remove('active');
+                    } else {
+                        activeTags.add(tag);
+                        tagEl.classList.add('active');
+                    }
+                    applyFilters();
+                });
+            });
+        }
+
+        // Aplicar filtros combinados (búsqueda + tags)
+        function applyFilters() {
+            const query = searchInput.value.trim().toLowerCase();
+            
+            // Filtrar primero por tags
+            let results = allSnippets;
+            
+            if (activeTags.size > 0) {
+                results = results.filter(snippet => {
+                    if (!snippet.tags || !Array.isArray(snippet.tags)) return false;
+                    // El snippet debe tener al menos uno de los tags activos
+                    return snippet.tags.some(tag => activeTags.has(tag));
+                });
+            }
+
+            // Luego aplicar búsqueda de texto
+            if (query) {
+                results = results.filter(snippet => {
                     const name = snippet.name.toLowerCase();
                     const abbr = snippet.abbreviation?.toLowerCase() || '';
                     const content = snippet.content_text?.toLowerCase() || '';
@@ -319,11 +487,16 @@
                            abbr.includes(query) || 
                            content.includes(query);
                 });
-                console.log('Filtered results:', filteredSnippets.length);
             }
 
+            filteredSnippets = results;
             selectedIndex = 0;
             renderResults();
+        }
+
+        // Búsqueda en tiempo real
+        searchInput.addEventListener('input', async (e) => {
+            applyFilters();
         });
 
         // Navegación con teclado
