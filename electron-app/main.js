@@ -88,6 +88,9 @@ function createMainWindow() {
         width: 1200,
         height: 800,
         show: false,
+        transparent: true,
+        backgroundColor: '#00000000',
+        frame: true,
         icon: createAppIcon(),
         webPreferences: {
             nodeIntegration: true,
