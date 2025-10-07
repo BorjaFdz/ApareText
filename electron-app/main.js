@@ -114,8 +114,6 @@ function createMainWindow() {
 function createTray() {
     const icon = createAppIcon();
     tray = new Tray(icon);
-    
-    console.log('✅ Tray icon created (16x16 bright green)');
 
     const contextMenu = Menu.buildFromTemplate([
         {
@@ -165,8 +163,7 @@ function createTray() {
  */
 function toggleEnabled() {
     isEnabled = !isEnabled;
-    createTray(); // Refresh menu
-    console.log(`ApareText ${isEnabled ? 'enabled' : 'disabled'}`);
+    createTray();
 }
 
 /**
@@ -177,7 +174,6 @@ function showPalette() {
     
     // Recrear la ventana si fue destruida
     if (!paletteWindow || paletteWindow.isDestroyed()) {
-        console.log('Recreating palette window...');
         createPaletteWindow();
     }
     
@@ -202,13 +198,10 @@ function showPalette() {
  * Registrar hotkeys globales
  */
 function registerHotkeys() {
-    // Ctrl+Space para paleta
     const ret = globalShortcut.register('CommandOrControl+Space', showPalette);
 
     if (!ret) {
-        console.error('❌ Failed to register global shortcut');
-    } else {
-        console.log('✅ Global hotkey registered: Ctrl+Space');
+        console.error('Failed to register global shortcut Ctrl+Space');
     }
 }
 
@@ -219,32 +212,22 @@ async function checkApiServer(retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await axios.get(`${API_URL}/health`, { timeout: 2000 });
-            console.log('✅ API Server connected:', response.data);
             return true;
         } catch (error) {
             if (i < retries - 1) {
-                console.log(`⏳ Waiting for API server... (attempt ${i + 1}/${retries})`);
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
     }
-    console.error('❌ API Server not available. Please start it first:');
-    console.error('   python -m server.main');
     return false;
 }
 
 /**
- * Simular escritura de texto (método simple sin librerías nativas)
+ * Copiar texto al clipboard
  */
 async function insertText(text) {
-    // Guardar clipboard anterior
     const previousClipboard = clipboard.readText();
-    
-    // Copiar al clipboard
     clipboard.writeText(text);
-    
-    console.log('✅ Text copied to clipboard.');
-    console.log('   Press Ctrl+V to paste in your target application.');
     
     // Restaurar clipboard después de 10 segundos
     setTimeout(() => {
@@ -256,7 +239,7 @@ async function insertText(text) {
  * Inicialización de la aplicación
  */
 app.whenReady().then(async () => {
-    console.log('🚀 ApareText Electron starting...');
+    console.log('🚀 ApareText starting...');
 
     // Verificar API
     const apiAvailable = await checkApiServer();
@@ -280,20 +263,9 @@ app.whenReady().then(async () => {
     createMainWindow();
     createPaletteWindow();
     createTray();
-
-    // Registrar hotkeys
     registerHotkeys();
 
-    console.log('✅ ApareText ready!');
-    console.log('');
-    console.log('📋 How to use:');
-    console.log('   1. Press Ctrl+Space to open palette');
-    console.log('   2. Search for your snippet');
-    console.log('   3. Press Enter to select');
-    console.log('   4. Text is copied to clipboard');
-    console.log('   5. Press Ctrl+V to paste anywhere');
-    console.log('');
-    console.log('💡 Tip: Click the tray icon for quick access');
+    console.log('✅ Ready! Press Ctrl+Space to open palette');
 });
 
 /**
@@ -362,7 +334,6 @@ ipcMain.handle('expand-snippet', async (event, snippetId, variables = {}) => {
 ipcMain.handle('create-snippet', async (event, snippetData) => {
     try {
         const response = await axios.post(`${API_URL}/api/snippets`, snippetData);
-        console.log('✅ Snippet created:', response.data.id);
         return response.data;
     } catch (error) {
         console.error('Error creating snippet:', error);
@@ -373,7 +344,6 @@ ipcMain.handle('create-snippet', async (event, snippetData) => {
 ipcMain.handle('update-snippet', async (event, snippetId, snippetData) => {
     try {
         const response = await axios.put(`${API_URL}/api/snippets/${snippetId}`, snippetData);
-        console.log('✅ Snippet updated:', snippetId);
         return response.data;
     } catch (error) {
         console.error('Error updating snippet:', error);
@@ -384,7 +354,6 @@ ipcMain.handle('update-snippet', async (event, snippetId, snippetData) => {
 ipcMain.handle('delete-snippet', async (event, snippetId) => {
     try {
         await axios.delete(`${API_URL}/api/snippets/${snippetId}`);
-        console.log('✅ Snippet deleted:', snippetId);
         return { success: true };
     } catch (error) {
         console.error('Error deleting snippet:', error);

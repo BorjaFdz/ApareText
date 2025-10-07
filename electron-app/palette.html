@@ -390,7 +390,6 @@
 
         // Cargar snippets al abrir
         window.addEventListener('focus', async () => {
-            console.log('Palette focused, loading snippets...');
             searchInput.value = '';
             searchInput.focus();
             await loadSnippets();
@@ -398,16 +397,13 @@
 
         // También cargar al inicio
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('Palette loaded');
             await loadSnippets();
         });
 
         // Cargar todos los snippets
         async function loadSnippets() {
             try {
-                console.log('Loading snippets...');
                 allSnippets = await ipcRenderer.invoke('get-snippets');
-                console.log('Snippets loaded:', allSnippets.length, allSnippets);
                 filteredSnippets = allSnippets;
                 selectedIndex = 0;
                 activeTags.clear();
@@ -577,15 +573,12 @@
 
                 const result = await ipcRenderer.invoke('expand-snippet', snippet.id, variables);
                 
-                if (result.success) {
-                    console.log('✅ Snippet expanded and copied to clipboard');
-                    // La ventana se cerrará automáticamente desde main.js
-                } else {
-                    console.error('❌ Error expanding:', result.error);
+                if (!result.success) {
+                    console.error('Error expanding snippet:', result.error);
                     alert('Error: ' + result.error);
                 }
             } catch (error) {
-                console.error('❌ Error:', error);
+                console.error('Error expanding snippet:', error);
                 alert('Error: ' + error.message);
             }
         }
@@ -593,18 +586,14 @@
         // Botón: Abrir Manager
         document.getElementById('openManagerBtn').addEventListener('click', () => {
             ipcRenderer.send('open-manager');
-            // Ocultar el palette
             window.blur();
         });
 
-        // Botón: Crear nuevo snippet - solo abre el manager
+        // Botón: Crear nuevo snippet
         document.getElementById('newSnippetBtn').addEventListener('click', () => {
             ipcRenderer.send('open-manager');
-            // Ocultar el palette
             window.blur();
         });
-
-        console.log('✅ Palette UI loaded');
     </script>
 </body>
 </html>

@@ -849,13 +849,9 @@ Puedes usar variables:
 
             try {
                 if (currentSnippet) {
-                    // Actualizar
                     await ipcRenderer.invoke('update-snippet', currentSnippet.id, snippetData);
-                    console.log('✅ Snippet actualizado');
                 } else {
-                    // Crear
                     await ipcRenderer.invoke('create-snippet', snippetData);
-                    console.log('✅ Snippet creado');
                 }
                 
                 await loadSnippets();
@@ -885,7 +881,6 @@ Puedes usar variables:
             try {
                 await ipcRenderer.invoke('create-snippet', snippetData);
                 await loadSnippets();
-                console.log('✅ Snippet duplicado');
             } catch (error) {
                 console.error('Error duplicating snippet:', error);
             }
@@ -901,7 +896,6 @@ Puedes usar variables:
                 await ipcRenderer.invoke('delete-snippet', currentSnippet.id);
                 await loadSnippets();
                 hideEditor();
-                console.log('✅ Snippet eliminado');
             } catch (error) {
                 console.error('Error deleting snippet:', error);
             }
@@ -920,11 +914,8 @@ Puedes usar variables:
         
         // Escuchar evento desde main process para crear nuevo snippet
         ipcRenderer.on('trigger-new-snippet', () => {
-            console.log('📝 Triggered new snippet from palette');
             newSnippet();
         });
-        
-        console.log('✅ Snippet Manager loaded');
     </script>
     </div> <!-- Cierre manager-container -->
 </body>
