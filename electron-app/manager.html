@@ -113,7 +113,7 @@
             padding: 12px 14px;
             cursor: pointer;
             border-radius: 10px;
-            transition: all 0.3s ease;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
             margin-bottom: 4px;
             background: transparent;
             border: 1px solid transparent;
@@ -254,97 +254,43 @@
 
         .btn-icon {
             padding: 10px 16px;
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.85), rgba(240, 240, 245, 0.9));
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1.5px solid rgba(255, 255, 255, 0.8);
-            border-radius: 20px;
+            background: rgba(248, 248, 250, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
             font-weight: 500;
             display: flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.3s ease;
+            transition: all 0.15s ease;
             color: rgba(0, 0, 0, 0.75);
-            box-shadow: 
-                0 4px 12px rgba(0, 0, 0, 0.08),
-                inset 0 1px 2px rgba(255, 255, 255, 0.9),
-                inset 0 -1px 2px rgba(0, 0, 0, 0.05);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-icon::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 20px;
-            padding: 1.5px;
-            background: linear-gradient(145deg, 
-                rgba(255, 255, 255, 0.9), 
-                rgba(200, 200, 210, 0.4));
-            -webkit-mask: 
-                linear-gradient(#fff 0 0) content-box, 
-                linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            opacity: 0.8;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .btn-icon:hover {
-            background: linear-gradient(145deg, rgba(50, 50, 60, 0.95), rgba(30, 30, 40, 0.98));
-            border-color: rgba(255, 255, 255, 0.6);
-            color: rgba(255, 255, 255, 0.95);
-            transform: translateY(-1px);
-            box-shadow: 
-                0 6px 20px rgba(0, 0, 0, 0.15),
-                inset 0 1px 2px rgba(255, 255, 255, 0.1),
-                inset 0 -1px 2px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn-icon:hover::before {
-            background: linear-gradient(145deg, 
-                rgba(255, 255, 255, 0.7), 
-                rgba(150, 150, 160, 0.3));
+            background: rgba(230, 230, 235, 0.95);
+            border-color: rgba(0, 0, 0, 0.2);
         }
 
         .btn-icon:active {
-            transform: translateY(0) scale(0.98);
-            box-shadow: 
-                0 2px 8px rgba(0, 0, 0, 0.12),
-                inset 0 2px 4px rgba(0, 0, 0, 0.15);
+            background: rgba(220, 220, 225, 0.95);
         }
 
         .btn-danger {
-            background: linear-gradient(145deg, rgba(255, 59, 48, 0.12), rgba(240, 40, 30, 0.15));
-            color: rgb(255, 59, 48);
-            border-color: rgba(255, 59, 48, 0.4);
-        }
-
-        .btn-danger::before {
-            background: linear-gradient(145deg, 
-                rgba(255, 100, 100, 0.6), 
-                rgba(200, 50, 50, 0.3));
+            background: rgba(255, 59, 48, 0.1);
+            color: rgb(200, 40, 30);
+            border-color: rgba(255, 59, 48, 0.3);
         }
 
         .btn-danger:hover {
-            background: linear-gradient(145deg, rgba(255, 59, 48, 0.95), rgba(220, 40, 30, 0.98));
-            border-color: rgba(255, 255, 255, 0.6);
-            color: rgba(255, 255, 255, 0.95);
-            box-shadow: 
-                0 6px 20px rgba(255, 59, 48, 0.25),
-                inset 0 1px 2px rgba(255, 255, 255, 0.1),
-                inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 59, 48, 0.15);
+            border-color: rgba(255, 59, 48, 0.4);
+            color: rgb(180, 30, 20);
         }
 
-        .btn-danger:hover::before {
-            background: linear-gradient(145deg, 
-                rgba(255, 150, 150, 0.7), 
-                rgba(200, 80, 80, 0.3));
+        .btn-danger:active {
+            background: rgba(255, 59, 48, 0.2);
         }
 
         .editor {
@@ -582,6 +528,125 @@
             font-style: italic;
         }
 
+        /* ============================================
+           ANIMACIONES Y UX IMPROVEMENTS
+           ============================================ */
+
+        .snippet-item {
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(40, 40, 50, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            animation: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(56, 142, 60, 0.95));
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.95), rgba(211, 47, 47, 0.95));
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.95), rgba(25, 118, 210, 0.95));
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(0, 122, 255, 0.2);
+            border-top-color: rgba(0, 122, 255, 0.8);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Fade in animation for cards */
+        .card {
+            animation: cardFadeIn 0.3s ease;
+        }
+
+        @keyframes cardFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Button hover effects mejorados */
+        .btn-icon {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-icon:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        /* ============================================
+           FIN ANIMACIONES
+           ============================================ */
+
         /* Scrollbar personalizado estilo macOS */
         .snippet-list::-webkit-scrollbar,
         .editor::-webkit-scrollbar {
@@ -770,11 +835,86 @@ Puedes usar variables:
     </div>
 
     <script>
+        console.log('[Manager] Script loading...');
+        
         const { ipcRenderer } = require('electron');
+        
+        console.log('[Manager] Electron IPC loaded successfully');
         
         let snippets = [];
         let currentSnippet = null;
         let currentTags = [];
+
+        // ============================================
+        // UTILIDADES UX/UI
+        // ============================================
+
+        // Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Sistema de notificaciones toast
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                info: 'ℹ️',
+                warning: '⚠️'
+            };
+            
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // Loading overlay
+        function showLoading(message = 'Cargando...') {
+            const existing = document.getElementById('loadingOverlay');
+            if (existing) return;
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.id = 'loadingOverlay';
+            overlay.innerHTML = `
+                <div style="text-align: center;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 16px; color: rgba(0, 0, 0, 0.6); font-weight: 500;">${message}</p>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.animation = 'fadeIn 0.2s ease reverse';
+                setTimeout(() => overlay.remove(), 200);
+            }
+        }
+
+        // ============================================
+        // FIN UTILIDADES
+        // ============================================
 
         // Elementos DOM
         const searchInput = document.getElementById('searchInput');
@@ -973,7 +1113,8 @@ Puedes usar variables:
         async function saveSnippet() {
             const name = nameInput.value.trim();
             if (!name) {
-                alert('El nombre es obligatorio');
+                showToast('El nombre es obligatorio', 'warning');
+                nameInput.focus();
                 return;
             }
 
@@ -1003,17 +1144,23 @@ Puedes usar variables:
             };
 
             try {
+                showLoading(currentSnippet ? 'Actualizando snippet...' : 'Creando snippet...');
+                
                 if (currentSnippet) {
                     await ipcRenderer.invoke('update-snippet', currentSnippet.id, snippetData);
+                    showToast(`✅ "${name}" actualizado correctamente`, 'success');
                 } else {
                     await ipcRenderer.invoke('create-snippet', snippetData);
+                    showToast(`✅ "${name}" creado correctamente`, 'success');
                 }
                 
                 await loadSnippets();
+                hideLoading();
                 hideEditor();
             } catch (error) {
+                hideLoading();
                 console.error('Error saving snippet:', error);
-                alert('Error al guardar: ' + error.message);
+                showToast('Error al guardar: ' + error.message, 'error');
             }
         }
 
@@ -1045,14 +1192,20 @@ Puedes usar variables:
         async function deleteSnippet() {
             if (!currentSnippet) return;
             
-            if (!confirm(`¿Eliminar "${currentSnippet.name}"?`)) return;
+            const confirmed = confirm(`⚠️ ¿Eliminar "${currentSnippet.name}"?\n\nEsta acción no se puede deshacer.`);
+            if (!confirmed) return;
 
             try {
+                showLoading('Eliminando snippet...');
                 await ipcRenderer.invoke('delete-snippet', currentSnippet.id);
+                hideLoading();
+                showToast(`🗑️ "${currentSnippet.name}" eliminado`, 'success');
                 await loadSnippets();
                 hideEditor();
             } catch (error) {
+                hideLoading();
                 console.error('Error deleting snippet:', error);
+                showToast('Error al eliminar: ' + error.message, 'error');
             }
         }
 
@@ -1062,7 +1215,7 @@ Puedes usar variables:
         duplicateBtn.addEventListener('click', duplicateSnippet);
         deleteBtn.addEventListener('click', deleteSnippet);
         cancelBtn.addEventListener('click', hideEditor);
-        searchInput.addEventListener('input', renderSnippetList);
+        searchInput.addEventListener('input', debounce(renderSnippetList, 200));
 
         // ============================================
         // NUEVAS FUNCIONALIDADES
@@ -1179,6 +1332,7 @@ Puedes usar variables:
 
         async function exportSnippets() {
             try {
+                showLoading('Exportando snippets...');
                 const data = await ipcRenderer.invoke('export-snippets');
                 
                 // Crear nombre de archivo con fecha
@@ -1193,12 +1347,16 @@ Puedes usar variables:
                     ]
                 });
 
+                hideLoading();
+
                 if (saved) {
-                    alert('✅ Snippets exportados correctamente a:\n' + saved);
+                    const count = data.snippets?.length || 0;
+                    showToast(`💾 ${count} snippets exportados correctamente`, 'success', 4000);
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error exporting snippets:', error);
-                alert('❌ Error al exportar snippets: ' + error.message);
+                showToast('❌ Error al exportar: ' + error.message, 'error');
             }
         }
 
@@ -1212,13 +1370,21 @@ Puedes usar variables:
                 });
 
                 if (filePath) {
-                    await ipcRenderer.invoke('import-snippets', filePath);
+                    showLoading('Importando snippets...');
+                    const result = await ipcRenderer.invoke('import-snippets', filePath);
                     await loadSnippets();
-                    alert('✅ Snippets importados correctamente desde:\n' + filePath);
+                    hideLoading();
+                    
+                    if (result && result.imported !== undefined) {
+                        showToast(`📥 Importados: ${result.imported} | Omitidos: ${result.skipped}`, 'success', 4000);
+                    } else {
+                        showToast('✅ Snippets importados correctamente', 'success');
+                    }
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error importing snippets:', error);
-                alert('❌ Error al importar snippets: ' + error.message);
+                showToast('❌ Error al importar: ' + error.message, 'error');
             }
         }
 
@@ -1227,12 +1393,16 @@ Puedes usar variables:
         // ============================================
 
         // Inicializar
+        console.log('[Manager] Initializing app...');
         loadSnippets();
+        console.log('[Manager] App initialized, snippets loading...');
         
         // Escuchar evento desde main process para crear nuevo snippet
         ipcRenderer.on('trigger-new-snippet', () => {
             newSnippet();
         });
+        
+        console.log('[Manager] Ready!');
     </script>
     </div> <!-- Cierre manager-container -->
 </body>

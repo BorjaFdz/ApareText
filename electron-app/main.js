@@ -95,11 +95,22 @@ function createMainWindow() {
         icon: createAppIcon(),
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            devTools: true // Habilitar DevTools
         }
     });
 
     mainWindow.loadFile('manager.html');
+
+    // Abrir DevTools automáticamente en modo debug
+    mainWindow.webContents.on('did-finish-load', () => {
+        console.log('[ApareText] Manager window loaded successfully');
+        mainWindow.webContents.openDevTools({ mode: 'detach' });
+    });
+
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+        console.error('[ApareText] Manager window failed to load:', errorCode, errorDescription);
+    });
 
     mainWindow.on('close', (event) => {
         if (!app.isQuitting) {
@@ -265,6 +276,15 @@ app.whenReady().then(async () => {
     createPaletteWindow();
     createTray();
     registerHotkeys();
+
+    // MODO DEBUG: Abrir ventana principal automáticamente
+    setTimeout(() => {
+        if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+            console.log('[ApareText] Manager window opened (debug mode)');
+        }
+    }, 1000);
 
     console.log('[ApareText] Ready! Press Ctrl+Space to open palette');
 });

@@ -81,7 +81,7 @@
             padding: 14px 16px;
             cursor: pointer;
             border-radius: 10px;
-            transition: all 0.3s ease;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
             margin-bottom: 4px;
             background: transparent;
             border: 1px solid transparent;
@@ -96,6 +96,88 @@
             background: rgba(0, 122, 255, 0.12);
             box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
             border: 1px solid rgba(0, 122, 255, 0.25);
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(40, 40, 50, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            animation: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(56, 142, 60, 0.95));
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.95), rgba(211, 47, 47, 0.95));
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, rgba(33, 150, 243, 0.95), rgba(25, 118, 210, 0.95));
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 122, 255, 0.2);
+            border-top-color: rgba(0, 122, 255, 0.8);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .snippet-name {
@@ -471,8 +553,67 @@
             });
         }
 
-        // Aplicar filtros combinados (búsqueda + tags)
-        function applyFilters() {
+        // ============================================
+        // UTILIDADES UX/UI
+        // ============================================
+
+        // Debounce function para optimizar búsquedas
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Sistema de notificaciones toast
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                info: 'ℹ️',
+                warning: '⚠️'
+            };
+            
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // Loading overlay
+        function showLoading() {
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.id = 'loadingOverlay';
+            overlay.innerHTML = '<div class="spinner"></div>';
+            document.querySelector('.palette-container').appendChild(overlay);
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.animation = 'fadeIn 0.2s ease reverse';
+                setTimeout(() => overlay.remove(), 200);
+            }
+        }
+
+        // Aplicar filtros combinados (búsqueda + tags) con debouncing
+        const applyFilters = debounce(() => {
             const query = searchInput.value.trim();
             
             // Filtrar primero por tags
@@ -497,7 +638,7 @@
             filteredSnippets = results;
             selectedIndex = 0;
             renderResults();
-        }
+        }, 150); // Debounce de 150ms
 
         // Búsqueda en tiempo real
         searchInput.addEventListener('input', async (e) => {
@@ -577,18 +718,27 @@
         // Expandir snippet
         async function expandSnippet(snippet) {
             try {
+                showLoading();
+                
                 // TODO: Si el snippet tiene variables, mostrar form
                 const variables = {};
 
                 const result = await ipcRenderer.invoke('expand-snippet', snippet.id, variables);
                 
+                hideLoading();
+                
                 if (!result.success) {
                     console.error('Error expanding snippet:', result.error);
-                    alert('Error: ' + result.error);
+                    showToast('Error al expandir snippet: ' + result.error, 'error');
+                } else {
+                    showToast(`✨ "${snippet.name}" copiado al portapapeles`, 'success', 2000);
+                    // Cerrar palette después de copiar
+                    setTimeout(() => window.blur(), 500);
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error expanding snippet:', error);
-                alert('Error: ' + error.message);
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
