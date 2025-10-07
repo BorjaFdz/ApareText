@@ -102,10 +102,8 @@ function createMainWindow() {
 
     mainWindow.loadFile('manager.html');
 
-    // Abrir DevTools automáticamente en modo debug
     mainWindow.webContents.on('did-finish-load', () => {
         console.log('[ApareText] Manager window loaded successfully');
-        mainWindow.webContents.openDevTools({ mode: 'detach' });
     });
 
     mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {

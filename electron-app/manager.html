@@ -9,7 +9,35 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     
+    <!-- Chart.js for Statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
     <style>
+        :root {
+            /* Light Theme (default) */
+            --primary-color: rgba(0, 122, 255, 1);
+            --bg-main: rgba(255, 255, 255, 0.95);
+            --bg-sidebar: rgba(248, 248, 250, 0.7);
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --text-primary: rgba(0, 0, 0, 0.87);
+            --text-secondary: rgba(0, 0, 0, 0.5);
+            --border-color: rgba(0, 0, 0, 0.08);
+            --hover-bg: rgba(0, 122, 255, 0.08);
+            --active-bg: rgba(0, 122, 255, 0.12);
+        }
+
+        [data-theme="dark"] {
+            --primary-color: rgba(10, 132, 255, 1);
+            --bg-main: rgba(30, 30, 35, 0.95);
+            --bg-sidebar: rgba(20, 20, 25, 0.8);
+            --bg-card: rgba(40, 40, 45, 0.95);
+            --text-primary: rgba(255, 255, 255, 0.95);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --border-color: rgba(255, 255, 255, 0.12);
+            --hover-bg: rgba(10, 132, 255, 0.15);
+            --active-bg: rgba(10, 132, 255, 0.25);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -707,6 +735,27 @@
         
         <div class="search-box">
             <input type="text" class="search-input" placeholder="🔍 Buscar snippets..." id="searchInput">
+            
+            <!-- Filtros Avanzados -->
+            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <select class="search-input" id="tagFilter" style="padding: 8px 12px; cursor: pointer;">
+                    <option value="">🏷️ Todos los tags</option>
+                </select>
+                
+                <select class="search-input" id="statusFilter" style="padding: 8px 12px; cursor: pointer;">
+                    <option value="all">📋 Todos</option>
+                    <option value="enabled">✅ Solo activos</option>
+                    <option value="disabled">❌ Deshabilitados</option>
+                </select>
+                
+                <select class="search-input" id="sortFilter" style="padding: 8px 12px; cursor: pointer;">
+                    <option value="name">🔤 Ordenar: Nombre (A-Z)</option>
+                    <option value="name_desc">🔤 Ordenar: Nombre (Z-A)</option>
+                    <option value="created">📅 Más recientes</option>
+                    <option value="created_old">📅 Más antiguos</option>
+                    <option value="usage">⭐ Más usados</option>
+                </select>
+            </div>
         </div>
         
         <div class="snippet-list" id="snippetList">
@@ -726,6 +775,11 @@
             <button class="btn-icon" id="importBtn" title="Importar snippets desde JSON">📥 Import</button>
             <button class="btn-icon" id="statsBtn" title="Ver estadísticas de uso">📊 Stats</button>
             <div style="flex: 1;"></div>
+            <select class="btn-icon" id="themeSelector" title="Cambiar tema" style="padding: 8px 12px; cursor: pointer; min-width: 120px;">
+                <option value="light">☀️ Claro</option>
+                <option value="dark">🌙 Oscuro</option>
+                <option value="auto">🔄 Auto</option>
+            </select>
         </div>
 
         <div class="toolbar" id="toolbar" style="display: none;">
@@ -748,7 +802,8 @@
                 <div class="card">
                     <h2 style="margin-bottom: 24px; color: rgba(0, 0, 0, 0.87);">📊 Estadísticas de Uso</h2>
                     
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <!-- Stats Summary Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px;">
                         <div class="stat-card">
                             <div class="stat-value" id="totalUses">0</div>
                             <div class="stat-label">Expansiones Totales</div>
@@ -763,7 +818,23 @@
                         </div>
                     </div>
 
-                    <h3 style="margin: 24px 0 12px; color: rgba(0, 0, 0, 0.75);">🏆 Top 5 Snippets Más Usados</h3>
+                    <!-- Charts Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+                        <!-- Top Snippets Chart -->
+                        <div style="background: rgba(248, 248, 250, 0.7); border-radius: 12px; padding: 20px;">
+                            <h3 style="margin-bottom: 16px; color: rgba(0, 0, 0, 0.75); font-size: 16px;">🏆 Top Snippets</h3>
+                            <canvas id="topSnippetsChart" style="max-height: 300px;"></canvas>
+                        </div>
+                        
+                        <!-- Tags Distribution Chart -->
+                        <div style="background: rgba(248, 248, 250, 0.7); border-radius: 12px; padding: 20px;">
+                            <h3 style="margin-bottom: 16px; color: rgba(0, 0, 0, 0.75); font-size: 16px;">🏷️ Snippets por Tag</h3>
+                            <canvas id="tagsChart" style="max-height: 300px;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Snippets List -->
+                    <h3 style="margin: 24px 0 12px; color: rgba(0, 0, 0, 0.75);">📋 Detalles de Uso</h3>
                     <div id="topSnippetsList" style="background: rgba(248, 248, 250, 0.7); border-radius: 10px; padding: 16px;">
                         <p style="color: rgba(0, 0, 0, 0.5); text-align: center;">Cargando estadísticas...</p>
                     </div>
@@ -808,10 +879,23 @@ Puedes usar variables:
 {{time:%H:%M}} - Hora actual
 {{|}} - Posición del cursor" style="display: none; height: 300px;"></textarea>
                     
-                    <!-- Preview Panel -->
+                    <!-- Preview Panel with Test Data -->
                     <div class="preview-panel" id="previewPanel" style="display: none;">
-                        <h3>👁️ Vista Previa</h3>
-                        <div id="snippetPreview" class="preview-content"></div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <!-- Test Variables Panel -->
+                            <div>
+                                <h3 style="margin-bottom: 12px;">� Datos de Prueba</h3>
+                                <div id="testVariablesPanel" style="background: rgba(248, 248, 250, 0.7); border-radius: 8px; padding: 12px; max-height: 250px; overflow-y: auto;">
+                                    <p style="color: rgba(0, 0, 0, 0.5); font-size: 13px;">No hay variables en este snippet</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Preview Content -->
+                            <div>
+                                <h3 style="margin-bottom: 12px;">�👁️ Vista Previa</h3>
+                                <div id="snippetPreview" class="preview-content" style="max-height: 250px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="form-hint">Usa {{variable}} para campos personalizables</div>
@@ -980,29 +1064,67 @@ Puedes usar variables:
         async function loadSnippets() {
             try {
                 snippets = await ipcRenderer.invoke('get-snippets');
+                updateTagFilterOptions();
                 renderSnippetList();
             } catch (error) {
                 console.error('Error loading snippets:', error);
             }
         }
 
-        // Renderizar lista
+        // Renderizar lista con filtros avanzados
         function renderSnippetList() {
             const query = searchInput.value.toLowerCase();
-            const filtered = snippets.filter(s => 
-                s.name.toLowerCase().includes(query) ||
-                s.abbreviation?.toLowerCase().includes(query)
-            );
+            const tagFilter = document.getElementById('tagFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const sortFilter = document.getElementById('sortFilter').value;
+            
+            // Filtrado
+            let filtered = snippets.filter(s => {
+                // Búsqueda por texto
+                const matchesQuery = s.name.toLowerCase().includes(query) ||
+                                   s.abbreviation?.toLowerCase().includes(query) ||
+                                   s.tags?.some(tag => tag.toLowerCase().includes(query));
+                
+                // Filtro por tag
+                const matchesTag = !tagFilter || s.tags?.includes(tagFilter);
+                
+                // Filtro por estado
+                let matchesStatus = true;
+                if (statusFilter === 'enabled') matchesStatus = s.enabled;
+                if (statusFilter === 'disabled') matchesStatus = !s.enabled;
+                
+                return matchesQuery && matchesTag && matchesStatus;
+            });
+
+            // Ordenamiento
+            filtered.sort((a, b) => {
+                switch(sortFilter) {
+                    case 'name':
+                        return a.name.localeCompare(b.name);
+                    case 'name_desc':
+                        return b.name.localeCompare(a.name);
+                    case 'created':
+                        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                    case 'created_old':
+                        return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+                    case 'usage':
+                        return (b.usage_count || 0) - (a.usage_count || 0);
+                    default:
+                        return 0;
+                }
+            });
 
             snippetList.innerHTML = filtered.map(snippet => {
                 const cleanAbbr = snippet.abbreviation ? 
                     snippet.abbreviation.replace(/^;+/, '') : '';
+                const enabledBadge = snippet.enabled ? '' : '<span style="color: rgba(255,59,48,0.8); font-size: 11px;">●</span> ';
+                const usageCount = snippet.usage_count ? ` (${snippet.usage_count} usos)` : '';
                 
                 return `
                     <div class="snippet-item ${currentSnippet?.id === snippet.id ? 'active' : ''}" 
                          data-id="${snippet.id}">
-                        <div class="snippet-item-name">${snippet.name}</div>
-                        <div class="snippet-item-abbr">${cleanAbbr ? ';' + cleanAbbr : 'Sin abreviatura'}</div>
+                        <div class="snippet-item-name">${enabledBadge}${snippet.name}</div>
+                        <div class="snippet-item-abbr">${cleanAbbr ? ';' + cleanAbbr : 'Sin abreviatura'}${usageCount}</div>
                     </div>
                 `;
             }).join('');
@@ -1015,6 +1137,29 @@ Puedes usar variables:
                     editSnippet(snippet);
                 });
             });
+        }
+
+        // Actualizar opciones de tag filter
+        function updateTagFilterOptions() {
+            const tagSet = new Set();
+            snippets.forEach(s => {
+                if (s.tags && s.tags.length > 0) {
+                    s.tags.forEach(tag => tagSet.add(tag));
+                }
+            });
+            
+            const tagFilter = document.getElementById('tagFilter');
+            const currentValue = tagFilter.value;
+            
+            tagFilter.innerHTML = '<option value="">🏷️ Todos los tags</option>' +
+                Array.from(tagSet).sort().map(tag => 
+                    `<option value="${tag}">${tag}</option>`
+                ).join('');
+            
+            // Restaurar valor seleccionado si aún existe
+            if (Array.from(tagSet).includes(currentValue)) {
+                tagFilter.value = currentValue;
+            }
         }
 
         // Nuevo snippet
@@ -1217,6 +1362,11 @@ Puedes usar variables:
         cancelBtn.addEventListener('click', hideEditor);
         searchInput.addEventListener('input', debounce(renderSnippetList, 200));
 
+        // Filtros avanzados event listeners
+        document.getElementById('tagFilter').addEventListener('change', renderSnippetList);
+        document.getElementById('statusFilter').addEventListener('change', renderSnippetList);
+        document.getElementById('sortFilter').addEventListener('change', renderSnippetList);
+
         // ============================================
         // NUEVAS FUNCIONALIDADES
         // ============================================
@@ -1230,6 +1380,9 @@ Puedes usar variables:
         
         // También actualizar cuando cambia el contenido de Quill
         quill.on('text-change', updatePreview);
+
+        // Test data storage
+        let testData = {};
 
         function updatePreview() {
             // Solo mostrar preview si hay contenido
@@ -1245,28 +1398,99 @@ Puedes usar variables:
             // Mostrar panel
             previewPanel.style.display = 'block';
             
-            // Simular expansión de variables con placeholders
+            // Extraer variables del contenido
+            const variables = extractVariables(content);
+            
+            // Actualizar panel de test variables
+            updateTestVariablesPanel(variables);
+            
+            // Renderizar preview con valores de prueba
+            renderPreviewWithTestData(content, variables);
+        }
+
+        function extractVariables(content) {
+            const vars = new Set();
+            const regex = /\{\{([^}]+)\}\}/g;
+            let match;
+            
+            while ((match = regex.exec(content)) !== null) {
+                const varName = match[1].trim();
+                // Excluir funciones especiales
+                if (!varName.startsWith('date:') && 
+                    !varName.startsWith('time:') && 
+                    varName !== 'clipboard' && 
+                    varName !== '|') {
+                    vars.add(varName);
+                }
+            }
+            
+            return Array.from(vars);
+        }
+
+        function updateTestVariablesPanel(variables) {
+            const panel = document.getElementById('testVariablesPanel');
+            
+            if (variables.length === 0) {
+                panel.innerHTML = '<p style="color: rgba(0, 0, 0, 0.5); font-size: 13px;">No hay variables en este snippet</p>';
+                return;
+            }
+            
+            panel.innerHTML = variables.map(varName => {
+                const currentValue = testData[varName] || '';
+                return `
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; font-size: 12px; color: rgba(0, 0, 0, 0.6); margin-bottom: 4px;">
+                            {{${varName}}}
+                        </label>
+                        <input 
+                            type="text" 
+                            class="test-var-input"
+                            data-var="${varName}"
+                            value="${currentValue}"
+                            placeholder="Valor de ejemplo..."
+                            style="width: 100%; padding: 6px 10px; border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 6px; font-size: 13px;"
+                        >
+                    </div>
+                `;
+            }).join('');
+            
+            // Agregar event listeners
+            panel.querySelectorAll('.test-var-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    testData[e.target.dataset.var] = e.target.value;
+                    updatePreview();
+                });
+            });
+        }
+
+        function renderPreviewWithTestData(content, variables) {
             let preview = content;
             
-            // Reemplazar variables con placeholders visuales
+            // Reemplazar variables con valores de prueba o placeholders
             preview = preview.replace(/\{\{([^}]+)\}\}/g, (match, variable) => {
+                const varName = variable.trim();
+                
                 // Funciones especiales
-                if (variable.startsWith('date:')) {
-                    const format = variable.split(':')[1] || '%d/%m/%Y';
+                if (varName.startsWith('date:')) {
                     return `<span style="background: rgba(76, 175, 80, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #2e7d32;">${new Date().toLocaleDateString()}</span>`;
                 }
-                if (variable.startsWith('time:')) {
+                if (varName.startsWith('time:')) {
                     return `<span style="background: rgba(76, 175, 80, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #2e7d32;">${new Date().toLocaleTimeString()}</span>`;
                 }
-                if (variable === 'clipboard') {
+                if (varName === 'clipboard') {
                     return `<span style="background: rgba(33, 150, 243, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #1565c0;">[clipboard]</span>`;
                 }
-                if (variable === '|') {
+                if (varName === '|') {
                     return '<span style="background: rgba(255, 152, 0, 0.3); padding: 0 4px; font-weight: bold; color: #e65100;">|</span>';
                 }
                 
-                // Variable normal
-                return `<span style="background: rgba(156, 39, 176, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #6a1b9a;">[${variable}]</span>`;
+                // Variable con valor de prueba
+                if (testData[varName] && testData[varName].trim() !== '') {
+                    return `<span style="background: rgba(156, 39, 176, 0.15); padding: 2px 6px; border-radius: 4px; font-weight: 500; color: #6a1b9a;">${testData[varName]}</span>`;
+                }
+                
+                // Variable sin valor (placeholder)
+                return `<span style="background: rgba(156, 39, 176, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #6a1b9a;">[${varName}]</span>`;
             });
             
             snippetPreview.innerHTML = preview;
@@ -1294,7 +1518,7 @@ Puedes usar variables:
                 document.getElementById('enabledSnippets').textContent = 
                     snippets.filter(s => s.enabled).length;
 
-                // Renderizar top snippets
+                // Renderizar top snippets list
                 const topSnippetsList = document.getElementById('topSnippetsList');
                 if (stats.top_snippets && stats.top_snippets.length > 0) {
                     topSnippetsList.innerHTML = stats.top_snippets
@@ -1312,15 +1536,136 @@ Puedes usar variables:
                 } else {
                     topSnippetsList.innerHTML = '<p style="color: rgba(0, 0, 0, 0.5); text-align: center; padding: 20px;">Aún no hay estadísticas de uso</p>';
                 }
+
+                // Crear gráficas
+                createStatsCharts(stats);
             } catch (error) {
                 console.error('Error loading stats:', error);
                 statsSection.innerHTML = '<div class="card"><p style="color: red;">Error al cargar estadísticas</p></div>';
             }
         }
 
+        let topSnippetsChartInstance = null;
+        let tagsChartInstance = null;
+
+        function createStatsCharts(stats) {
+            // Limpiar gráficas anteriores
+            if (topSnippetsChartInstance) topSnippetsChartInstance.destroy();
+            if (tagsChartInstance) tagsChartInstance.destroy();
+
+            // Chart 1: Top Snippets (Horizontal Bar)
+            const topSnippetsCanvas = document.getElementById('topSnippetsChart');
+            const topSnippets = (stats.top_snippets || []).slice(0, 5);
+            
+            if (topSnippets.length > 0) {
+                topSnippetsChartInstance = new Chart(topSnippetsCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: topSnippets.map(s => s.name.length > 20 ? s.name.substring(0, 20) + '...' : s.name),
+                        datasets: [{
+                            label: 'Usos',
+                            data: topSnippets.map(s => s.usage_count),
+                            backgroundColor: 'rgba(0, 122, 255, 0.6)',
+                            borderColor: 'rgba(0, 122, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `${context.parsed.x} usos`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: { precision: 0 }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Chart 2: Tags Distribution (Doughnut)
+            const tagsCanvas = document.getElementById('tagsChart');
+            const tagCounts = {};
+            
+            snippets.forEach(snippet => {
+                if (snippet.tags && snippet.tags.length > 0) {
+                    snippet.tags.forEach(tag => {
+                        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                    });
+                } else {
+                    tagCounts['Sin tag'] = (tagCounts['Sin tag'] || 0) + 1;
+                }
+            });
+
+            const tagLabels = Object.keys(tagCounts);
+            const tagData = Object.values(tagCounts);
+            
+            const colors = [
+                'rgba(0, 122, 255, 0.7)',
+                'rgba(52, 199, 89, 0.7)',
+                'rgba(255, 149, 0, 0.7)',
+                'rgba(255, 59, 48, 0.7)',
+                'rgba(175, 82, 222, 0.7)',
+                'rgba(90, 200, 250, 0.7)',
+                'rgba(255, 204, 0, 0.7)'
+            ];
+
+            if (tagLabels.length > 0) {
+                tagsChartInstance = new Chart(tagsCanvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: tagLabels,
+                        datasets: [{
+                            data: tagData,
+                            backgroundColor: colors.slice(0, tagLabels.length),
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 12,
+                                    font: { size: 11 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
         function hideStats() {
             statsSection.style.display = 'none';
             emptyState.style.display = 'block';
+            
+            // Limpiar gráficas
+            if (topSnippetsChartInstance) topSnippetsChartInstance.destroy();
+            if (tagsChartInstance) tagsChartInstance.destroy();
         }
 
         // 3. EXPORT/IMPORT
@@ -1389,6 +1734,42 @@ Puedes usar variables:
         }
 
         // ============================================
+        // FIN NUEVAS FUNCIONALIDADES
+        // ============================================
+
+        // 5. TEMA PERSONALIZABLE
+        const themeSelector = document.getElementById('themeSelector');
+        const body = document.body;
+
+        // Cargar tema guardado
+        const savedTheme = localStorage.getItem('aparetext-theme') || 'light';
+        applyTheme(savedTheme);
+        themeSelector.value = savedTheme;
+
+        themeSelector.addEventListener('change', (e) => {
+            const theme = e.target.value;
+            applyTheme(theme);
+            localStorage.setItem('aparetext-theme', theme);
+            showToast(`🎨 Tema cambiado a ${theme === 'light' ? 'Claro' : theme === 'dark' ? 'Oscuro' : 'Automático'}`, 'info', 2000);
+        });
+
+        function applyTheme(theme) {
+            if (theme === 'auto') {
+                // Detectar tema del sistema
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            } else {
+                body.setAttribute('data-theme', theme);
+            }
+        }
+
+        // Escuchar cambios en el tema del sistema si está en modo auto
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (themeSelector.value === 'auto') {
+                body.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            }
+        });
+
         // FIN NUEVAS FUNCIONALIDADES
         // ============================================
 
