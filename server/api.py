@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from core.database import Database, get_db
-from core.models import Snippet, SnippetVariable
+from core.models import Snippet, SnippetVariable, SnippetDB, SnippetVariableDB
 from core.snippet_manager import SnippetManager
 from core.template_parser import TemplateParser
 
@@ -321,11 +321,77 @@ async def export_snippets():
 
 @app.post("/api/import")
 async def import_snippets(
+    data: dict,
     replace: bool = Query(False, description="Reemplazar snippets existentes")
 ):
     """Importar snippets desde JSON."""
-    # TODO: Implementar upload de archivo
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    try:
+        db = get_db()
+        session = db.get_session()
+        
+        # Validar formato
+        if 'snippets' not in data:
+            raise HTTPException(status_code=400, detail="Invalid format: missing 'snippets' key")
+        
+        imported_count = 0
+        skipped_count = 0
+        
+        for snippet_data in data['snippets']:
+            try:
+                # Si replace=True, eliminar snippets con el mismo abbreviation
+                if replace and snippet_data.get('abbreviation'):
+                    existing = session.query(SnippetDB).filter(
+                        SnippetDB.abbreviation == snippet_data['abbreviation']
+                    ).first()
+                    if existing:
+                        session.delete(existing)
+                        session.commit()
+                
+                # Crear snippet (sin incluir id para que se genere uno nuevo)
+                snippet_data_clean = {k: v for k, v in snippet_data.items() if k != 'id'}
+                
+                # Extraer variables si existen
+                variables = snippet_data_clean.pop('variables', [])
+                
+                # Convertir fechas de string a datetime
+                if 'created_at' in snippet_data_clean and isinstance(snippet_data_clean['created_at'], str):
+                    snippet_data_clean['created_at'] = datetime.fromisoformat(snippet_data_clean['created_at'].replace('Z', '+00:00'))
+                if 'updated_at' in snippet_data_clean and isinstance(snippet_data_clean['updated_at'], str):
+                    snippet_data_clean['updated_at'] = datetime.fromisoformat(snippet_data_clean['updated_at'].replace('Z', '+00:00'))
+                
+                # Crear snippet
+                snippet = SnippetDB(**snippet_data_clean)
+                session.add(snippet)
+                session.flush()  # Para obtener el ID
+                
+                # Crear variables asociadas
+                for var_data in variables:
+                    var_data_clean = {k: v for k, v in var_data.items() if k != 'id'}
+                    var_data_clean['snippet_id'] = snippet.id
+                    variable = SnippetVariableDB(**var_data_clean)
+                    session.add(variable)
+                
+                imported_count += 1
+                
+            except Exception as e:
+                print(f"[ApareText] Error importing snippet: {e}")
+                skipped_count += 1
+                session.rollback()  # Rollback en caso de error
+                continue
+        
+        session.commit()
+        session.close()
+        
+        return {
+            "success": True,
+            "imported": imported_count,
+            "skipped": skipped_count,
+            "message": f"Importados {imported_count} snippets ({skipped_count} omitidos)"
+        }
+        
+    except Exception as e:
+        print(f"[ApareText] Error in import: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Validación de template

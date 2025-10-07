@@ -457,9 +457,23 @@
             });
         }
 
+        // Búsqueda Fuzzy con Fuse.js
+        const Fuse = require('fuse.js');
+        let fuse = null;
+
+        function initFuzzySearch(snippets) {
+            fuse = new Fuse(snippets, {
+                keys: ['name', 'abbreviation', 'content_text', 'tags'],
+                threshold: 0.3,  // Tolerancia a typos (0 = exacto, 1 = match todo)
+                ignoreLocation: true,
+                includeScore: true,
+                minMatchCharLength: 2
+            });
+        }
+
         // Aplicar filtros combinados (búsqueda + tags)
         function applyFilters() {
-            const query = searchInput.value.trim().toLowerCase();
+            const query = searchInput.value.trim();
             
             // Filtrar primero por tags
             let results = allSnippets;
@@ -472,17 +486,12 @@
                 });
             }
 
-            // Luego aplicar búsqueda de texto
+            // Luego aplicar búsqueda fuzzy
             if (query) {
-                results = results.filter(snippet => {
-                    const name = snippet.name.toLowerCase();
-                    const abbr = snippet.abbreviation?.toLowerCase() || '';
-                    const content = snippet.content_text?.toLowerCase() || '';
-                    
-                    return name.includes(query) || 
-                           abbr.includes(query) || 
-                           content.includes(query);
-                });
+                // Inicializar Fuse con los snippets filtrados por tags
+                initFuzzySearch(results);
+                const fuzzyResults = fuse.search(query);
+                results = fuzzyResults.map(result => result.item);
             }
 
             filteredSnippets = results;

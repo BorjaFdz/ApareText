@@ -3,9 +3,10 @@
  * Paleta de comandos funcional sin módulos complejos
  */
 
-const { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, clipboard, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, clipboard, nativeImage, dialog } = require('electron');
 const path = require('path');
 const axios = require('axios');
+const fs = require('fs').promises;
 
 // Configuración
 const API_URL = 'http://127.0.0.1:46321';
@@ -380,5 +381,104 @@ ipcMain.on('open-manager-new', () => {
         });
     }
 });
+
+// ============================================
+// NUEVOS IPC HANDLERS
+// ============================================
+
+// IPC: Obtener estadísticas
+ipcMain.handle('get-stats', async (event) => {
+    try {
+        const response = await axios.get(`${API_URL}/api/stats`);
+        return response.data;
+    } catch (error) {
+        console.error('[ApareText] Error getting stats:', error);
+        return {
+            total_uses: 0,
+            top_snippets: []
+        };
+    }
+});
+
+// IPC: Exportar snippets
+ipcMain.handle('export-snippets', async (event) => {
+    try {
+        const response = await axios.get(`${API_URL}/api/export`);
+        return response.data;
+    } catch (error) {
+        console.error('[ApareText] Error exporting snippets:', error);
+        throw error;
+    }
+});
+
+// IPC: Guardar archivo (dialog)
+ipcMain.handle('save-file-dialog', async (event, options) => {
+    const { dialog } = require('electron');
+    const fs = require('fs').promises;
+    
+    try {
+        const result = await dialog.showSaveDialog(mainWindow || paletteWindow, {
+            title: 'Exportar Snippets',
+            defaultPath: options.defaultPath,
+            filters: options.filters
+        });
+
+        if (!result.canceled && result.filePath) {
+            // Obtener datos de exportación
+            const response = await axios.get(`${API_URL}/api/export`);
+            await fs.writeFile(result.filePath, JSON.stringify(response.data, null, 2), 'utf8');
+            return result.filePath;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('[ApareText] Error saving file:', error);
+        throw error;
+    }
+});
+
+// IPC: Abrir archivo (dialog)
+ipcMain.handle('open-file-dialog', async (event, options) => {
+    const { dialog } = require('electron');
+    
+    try {
+        const result = await dialog.showOpenDialog(mainWindow || paletteWindow, {
+            title: 'Importar Snippets',
+            filters: options.filters,
+            properties: options.properties
+        });
+
+        if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+            return result.filePaths[0];
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('[ApareText] Error opening file:', error);
+        throw error;
+    }
+});
+
+// IPC: Importar snippets
+ipcMain.handle('import-snippets', async (event, filePath) => {
+    const fs = require('fs').promises;
+    
+    try {
+        // Leer archivo
+        const content = await fs.readFile(filePath, 'utf8');
+        const data = JSON.parse(content);
+        
+        // Enviar al API
+        const response = await axios.post(`${API_URL}/api/import`, data);
+        return response.data;
+    } catch (error) {
+        console.error('[ApareText] Error importing snippets:', error);
+        throw error;
+    }
+});
+
+// ============================================
+// FIN NUEVOS IPC HANDLERS
+// ============================================
 
 console.log('[ApareText] Electron loaded');
