@@ -38,18 +38,34 @@ async def websocket_endpoint(websocket: WebSocket):
 
 def main():
     """Iniciar servidor."""
-    print("🚀 Starting ApareText Server...")
-    print("📡 API: http://localhost:46321")
-    print("🔌 WebSocket: ws://localhost:46321/ws")
-    print("📚 Docs: http://localhost:46321/docs")
-    print("\nPress CTRL+C to stop\n")
-
+    import sys
+    import os
+    
+    # Detectar si estamos en PyInstaller
+    is_frozen = getattr(sys, 'frozen', False)
+    
+    if is_frozen:
+        # En PyInstaller: Deshabilitar COMPLETAMENTE el logging de uvicorn
+        import logging
+        logging.disable(logging.CRITICAL)  # Deshabilitar TODOS los logs
+        os.environ["UVICORN_LOG_CONFIG"] = ""  # Variable de entorno vacía
+    
+    if not is_frozen:
+        print("🚀 Starting ApareText Server...")
+        print("📡 API: http://localhost:46321")
+        print("🔌 WebSocket: ws://localhost:46321/ws")
+        print("📚 Docs: http://localhost:46321/docs")
+        print("\nPress CTRL+C to stop\n")
+    
+    # Usar uvicorn.run() pero con logging deshabilitado
     uvicorn.run(
-        "server.main:app",
+        app,
         host="127.0.0.1",
         port=46321,
-        reload=True,
-        log_level="info",
+        reload=False,
+        log_level="critical" if is_frozen else "info",
+        access_log=False if is_frozen else True,
+        log_config=None,  # CRÍTICO: No cargar archivo de config
     )
 
 

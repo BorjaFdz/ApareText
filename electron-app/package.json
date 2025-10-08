@@ -32,19 +32,37 @@
     "appId": "com.aparetext.desktop",
     "productName": "ApareText",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
       "**/*",
-      "!node_modules",
-      "!dist"
+      "!dist",
+      "!build",
+      "!**/*.ts",
+      "!**/.git*"
+    ],
+    "asar": false,
+    "extraResources": [
+      {
+        "from": "../dist/ApareText-Server.exe",
+        "to": "ApareText-Server.exe"
+      }
     ],
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
       ],
-      "icon": "assets/icon.ico"
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "publisherName": "Borja Fernández",
+      "verifyUpdateCodeSignature": false
     },
     "mac": {
       "target": [

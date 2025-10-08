@@ -7,6 +7,7 @@ const { app, BrowserWindow, ipcMain, globalShortcut, Tray, Menu, clipboard, nati
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs').promises;
+const { spawn } = require('child_process');
 
 // Configuración
 const API_URL = 'http://127.0.0.1:46321';
@@ -14,6 +15,83 @@ let mainWindow = null;
 let paletteWindow = null;
 let tray = null;
 let isEnabled = true;
+let backendProcess = null;
+
+/**
+ * Iniciar el backend server automáticamente
+ */
+function startBackendServer() {
+    console.log('[ApareText] Starting backend server...');
+    
+    // En desarrollo, el backend se inicia manualmente
+    // En producción, usar el ejecutable empaquetado
+    const isDev = !app.isPackaged;
+    
+    if (isDev) {
+        console.log('[ApareText] Development mode - expecting manual server start');
+        return null;
+    }
+    
+    // Ruta al ejecutable del backend en producción
+    const backendPath = path.join(process.resourcesPath, 'ApareText-Server.exe');
+    
+    console.log(`[ApareText] Backend path: ${backendPath}`);
+    
+    // Verificar que existe
+    if (!require('fs').existsSync(backendPath)) {
+        console.error('[ApareText] Backend executable not found at:', backendPath);
+        dialog.showErrorBox(
+            'Backend Not Found',
+            `Could not find backend server at:\n${backendPath}\n\nPlease reinstall the application.`
+        );
+        return null;
+    }
+    
+    // Iniciar el proceso del backend
+    try {
+        backendProcess = spawn(backendPath, [], {
+            detached: false,
+            stdio: 'ignore', // Ignorar output para evitar problemas
+            windowsHide: true // Ocultar ventana de consola en Windows
+        });
+        
+        backendProcess.on('error', (err) => {
+            console.error('[ApareText] Failed to start backend:', err);
+            dialog.showErrorBox(
+                'Backend Error',
+                `Failed to start backend server:\n${err.message}`
+            );
+        });
+        
+        backendProcess.on('exit', (code, signal) => {
+            console.log(`[ApareText] Backend exited with code ${code}, signal ${signal}`);
+            backendProcess = null;
+        });
+        
+        console.log(`[ApareText] Backend started with PID: ${backendProcess.pid}`);
+        return backendProcess;
+        
+    } catch (error) {
+        console.error('[ApareText] Error spawning backend:', error);
+        return null;
+    }
+}
+
+/**
+ * Detener el backend server
+ */
+function stopBackendServer() {
+    if (backendProcess && !backendProcess.killed) {
+        console.log('[ApareText] Stopping backend server...');
+        try {
+            backendProcess.kill();
+            backendProcess = null;
+            console.log('[ApareText] Backend stopped');
+        } catch (error) {
+            console.error('[ApareText] Error stopping backend:', error);
+        }
+    }
+}
 
 /**
  * Crear el icono de la aplicación (verde brillante - máxima visibilidad)
@@ -287,6 +365,19 @@ async function copyImageToClipboard(base64Data) {
 app.whenReady().then(async () => {
     console.log('[ApareText] Starting...');
 
+    // Iniciar backend automáticamente en producción
+    startBackendServer();
+    
+    // Esperar 2 segundos para que el backend se inicie
+    if (!app.isPackaged) {
+        // En desarrollo, verificar que esté corriendo manualmente
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    } else {
+        // En producción, esperar a que el backend inicie
+        console.log('[ApareText] Waiting for backend to start...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+
     // Verificar API
     const apiAvailable = await checkApiServer();
     if (!apiAvailable) {
@@ -295,7 +386,9 @@ app.whenReady().then(async () => {
             type: 'warning',
             title: 'API Server Not Running',
             message: 'The Python API server is not running.',
-            detail: 'Please start it with:\npython -m uvicorn server.api:app --reload --port 46321\n\nContinue anyway?',
+            detail: app.isPackaged 
+                ? 'The backend server failed to start. Please check the installation or try reinstalling.\n\nContinue anyway?'
+                : 'Please start it with:\npython -m uvicorn server.api:app --reload --port 46321\n\nContinue anyway?',
             buttons: ['Quit', 'Continue']
         });
         
@@ -321,7 +414,14 @@ app.whenReady().then(async () => {
  * Limpiar al salir
  */
 app.on('will-quit', () => {
+    console.log('[ApareText] Shutting down...');
     globalShortcut.unregisterAll();
+    stopBackendServer(); // Detener el backend
+});
+
+app.on('before-quit', () => {
+    // Marcar que estamos cerrando para prevenir re-abrir ventanas
+    app.isQuitting = true;
 });
 
 app.on('window-all-closed', () => {
