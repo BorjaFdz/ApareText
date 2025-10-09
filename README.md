@@ -22,7 +22,7 @@ ApareText es una herramienta de productividad que te permite escribir más rápi
 
 - 📝 **Variables dinámicas**: Snippets con campos personalizables (`{{nombre}}`, `{{fecha}}`)- 📝 **Variables dinámicas**: Snippets con campos personalizables (`{{nombre}}`, `{{fecha}}`)
 
-- 🎨 **Rich text**: Soporte completo para HTML y formato enriquecido con miniaturas- 🎨 **Rich text**: Soporte completo para HTML y formato enriquecido con miniaturas
+🎨 **Rich text**: Soporte completo para HTML y formato enriquecido
 
 - 💾 **100% Local**: Sin telemetría, sin cloud, tus datos nunca salen de tu equipo- 💾 **100% Local**: Sin telemetría, sin cloud, tus datos nunca salen de tu equipo
 

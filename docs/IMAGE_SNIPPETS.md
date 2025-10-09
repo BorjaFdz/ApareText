@@ -200,7 +200,7 @@ Uso: Reportes, soporte técnico, documentación
 
 ### 5. Memes o Imágenes de Respuesta
 ```
-Abreviación: ;ok, ;thumbsup, ;facepalm
+Abreviación: ;ok, ;facepalm
 Imagen: Reacciones visuales rápidas
 Uso: Slack, Discord, Teams
 ```
@@ -221,8 +221,7 @@ Uso: Presentaciones, emails, documentos
 En la lista de snippets, los de tipo IMAGEN se identifican por:
 
 - **Icono**: 🖼️ (en lugar de 📝)
-- **Borde azul púrpura** en el thumbnail
-- **Preview de la imagen** en el thumbnail
+  
 
 ### Editar un Snippet de Imagen
 
@@ -257,7 +256,7 @@ Dentro del editor:
 | **Contenido** | Texto (plain o HTML) | Imagen (PNG/JPG/GIF) |
 | **Expansión** | Inserta texto en cursor | Copia imagen al portapapeles |
 | **Editor** | Quill WYSIWYG o textarea | Área de carga de imagen |
-| **Thumbnail** | Opcional (solo para HTML) | La imagen ES el contenido |
+| **Thumbnail** |  | La imagen ES el contenido |
 | **Variables** | ✅ Soportadas | ❌ No soportadas |
 | **Preview** | Vista previa del HTML renderizado | Preview de la imagen |
 | **Habilitar/Deshabilitar** | ✅ Sí | ✅ Sí |

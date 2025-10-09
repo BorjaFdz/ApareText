@@ -58,7 +58,6 @@ class SnippetDB(Base):
     content_html = Column(Text, nullable=True)
     is_rich = Column(Boolean, default=False)
     image_data = Column(Text, nullable=True)  # Base64 image data para snippets tipo IMAGE
-    thumbnail = Column(Text, nullable=True)  # Preview thumbnail (solo para tipo TEXT con HTML)
     scope_type = Column(String, default=ScopeType.GLOBAL.value)
     scope_values = Column(Text, nullable=True)  # JSON array
     caret_marker = Column(String, default="{{|}}")
@@ -160,7 +159,6 @@ class Snippet(BaseModel):
     content_html: Optional[str] = None
     is_rich: bool = False
     image_data: Optional[str] = None  # Base64 image data para snippets tipo IMAGE
-    thumbnail: Optional[str] = None  # Preview thumbnail (solo para tipo TEXT con HTML)
     scope_type: ScopeType = ScopeType.GLOBAL
     scope_values: list[str] = Field(default_factory=list)
     caret_marker: str = "{{|}}"

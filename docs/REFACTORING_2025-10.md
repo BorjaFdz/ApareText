@@ -13,7 +13,7 @@ Limpiar y refactorizar el código de ApareText eliminando funcionalidades no uti
 - `clean_empty_snippets.py`
 - `fix_empty_snippet.py`
 - `migrate_add_snippet_type.py`
-- `migrate_add_thumbnail.py`
+  
 - `test_quick_wins.py`
 
 **Documentación redundante** (20 archivos eliminados):
@@ -34,8 +34,7 @@ Limpiar y refactorizar el código de ApareText eliminando funcionalidades no uti
 - `STEP_11_ABBREVIATION_DETECTOR.md`
 - `TESTING_IMAGE_SNIPPETS.md`
 - `TEST_RESULTS_ITEM_3.md`
-- `THUMBNAILS_GUIA.md`
-- `THUMBNAIL_TYPE_DISCRIMINATION.md`
+  
 - `TOGGLE_IMPROVEMENTS.md`
 - `VOICE_COMMANDS_TROUBLESHOOTING.md`
 

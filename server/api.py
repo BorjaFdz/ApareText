@@ -61,7 +61,6 @@ class SnippetCreate(BaseModel):
     content_html: Optional[str] = None
     is_rich: bool = False
     image_data: Optional[str] = None  # Base64 image data para snippets tipo IMAGE
-    thumbnail: Optional[str] = None  # Base64 preview para snippets tipo TEXT con HTML
     scope_type: str = "global"
     scope_values: list[str] = []
     variables: list[SnippetVariable] = []
@@ -78,7 +77,6 @@ class SnippetUpdate(BaseModel):
     content_html: Optional[str] = None
     is_rich: Optional[bool] = None
     image_data: Optional[str] = None  # Base64 image data para snippets tipo IMAGE
-    thumbnail: Optional[str] = None  # Base64 preview para snippets tipo TEXT con HTML
     scope_type: Optional[str] = None
     scope_values: Optional[list[str]] = None
     variables: Optional[list[SnippetVariable]] = None
@@ -169,7 +167,6 @@ async def create_snippet(snippet_data: SnippetCreate):
         content_html=snippet_data.content_html,
         is_rich=snippet_data.is_rich,
         image_data=snippet_data.image_data,
-        thumbnail=snippet_data.thumbnail,
         scope_type=snippet_data.scope_type,
         scope_values=snippet_data.scope_values,
         variables=snippet_data.variables,

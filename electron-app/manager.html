@@ -175,13 +175,7 @@
         }
 
         .snippet-item-thumbnail {
-            width: 100%;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 6px;
-            margin-top: 8px;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            background: rgba(255, 255, 255, 0.5);
+            /* Thumbnail CSS removed */
         }
 
         .snippet-item-content {
@@ -191,27 +185,15 @@
         }
 
         .snippet-item-thumb-container {
-            flex-shrink: 0;
-            width: 80px;
-            height: 60px;
-            border-radius: 8px;
-            overflow: hidden;
-            background: rgba(248, 248, 250, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid rgba(0, 0, 0, 0.08);
+            /* Thumbnail container CSS removed */
         }
 
         .snippet-item-thumb-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            /* Thumbnail image CSS removed */
         }
 
         .snippet-item-thumb-container .thumb-placeholder {
-            font-size: 24px;
-            opacity: 0.3;
+            /* Thumbnail placeholder CSS removed */
         }
 
         .snippet-item-info {
@@ -1427,35 +1409,11 @@ Puedes usar variables:
                 // Determinar tipo de snippet
                 const snippetType = snippet.snippet_type || 'text';
                 
-                // Thumbnail visual según tipo
-                let thumbnailHTML;
-                if (snippetType === 'image') {
-                    // Mostrar preview de imagen
-                    const hasImage = snippet.image_data && snippet.image_data.length > 0;
-                    thumbnailHTML = hasImage ? 
-                        `<div class="snippet-item-thumb-container" style="border-color: rgba(88, 86, 214, 0.5);">
-                            <img src="${snippet.image_data}" alt="Preview" />
-                        </div>` :
-                        `<div class="snippet-item-thumb-container">
-                            <div class="thumb-placeholder">🖼️</div>
-                        </div>`;
-                } else {
-                    // Snippet de texto: mostrar thumbnail si existe
-                    const hasThumbnail = snippet.thumbnail && snippet.thumbnail.length > 0;
-                    thumbnailHTML = hasThumbnail ? 
-                        `<div class="snippet-item-thumb-container">
-                            <img src="${snippet.thumbnail}" alt="Preview" />
-                        </div>` :
-                        `<div class="snippet-item-thumb-container">
-                            <div class="thumb-placeholder">📝</div>
-                        </div>`;
-                }
-                
+                // Thumbnail logic removed
                 return `
                     <div class="snippet-item ${currentSnippet?.id === snippet.id ? 'active' : ''}" 
                          data-id="${snippet.id}">
                         <div class="snippet-item-content">
-                            ${thumbnailHTML}
                             <div class="snippet-item-info">
                                 <div class="snippet-item-name">${enabledBadge}${snippet.name}</div>
                                 <div class="snippet-item-abbr">${cleanAbbr ? ';' + cleanAbbr : 'Sin abreviatura'}${usageCount}</div>
