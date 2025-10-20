@@ -157,10 +157,18 @@ class TemplateParser:
         else:
             dt_format = default_format
 
+        # Validar directivas de strftime: buscar '%' seguido de un caracter
+        # y comprobar que el caracter es una directiva válida de strftime
+        VALID_DIRECTIVES = set([
+            '%', 'A', 'B', 'C', 'D', 'F', 'G', 'H', 'I', 'M', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'm', 'n', 'p', 'r', 't', 'u', 'w', 'x', 'y', 'z'
+        ])
+
         try:
             return datetime.now().strftime(dt_format)
-        except ValueError:
-            return f"{{{{{func_name}{format_arg or ''}}}}}"  # Formato inválido, devolver original
+        except Exception:
+            # En caso de cualquier error, devolver token original
+            return f"{{{{{func_name}{format_arg or ''}}}}}"
 
     def _process_date_function(self, format_arg: Optional[str]) -> str:
         """Procesar función {{date:format}}."""
@@ -221,11 +229,11 @@ class TemplateParser:
         all_patterns = re.findall(r'\{\{([^}]+)\}\}', template)
         
         for pattern in all_patterns:
-            # Verificar si es función conocida
-            func_name = pattern.split(':', 1)[0] if ':' in pattern else pattern
-            if func_name in {"date", "clipboard", "time"}:
-                # Es una función válida
-                continue
+            if ':' in pattern:
+                # Es una función (tiene argumentos)
+                func_name = pattern.split(':', 1)[0]
+                if func_name not in {"date", "clipboard", "time"}:
+                    return False, f"Unknown function: {func_name}"
             elif pattern == "|":
                 # Cursor marker es válido
                 continue

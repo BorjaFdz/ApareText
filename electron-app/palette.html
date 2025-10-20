@@ -415,6 +415,96 @@
         .filter-tag.active .tag-count {
             opacity: 0.9;
         }
+
+        /* Estilos para el modal de variables */
+        .variable-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .variable-modal-content {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            min-width: 400px;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .variable-modal-content h3 {
+            margin: 0 0 20px 0;
+            color: #ffffff;
+            font-size: 18px;
+        }
+        
+        .variable-input {
+            margin-bottom: 15px;
+        }
+        
+        .variable-input label {
+            display: block;
+            margin-bottom: 5px;
+            color: #cccccc;
+            font-weight: 500;
+        }
+        
+        .variable-input input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #1a1a1a;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        
+        .variable-input input:focus {
+            outline: none;
+            border-color: #007acc;
+            box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+        }
+        
+        .variable-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .variable-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .variable-buttons button[type="button"] {
+            background: #555;
+            color: #ffffff;
+        }
+        
+        .variable-buttons button[type="button"]:hover {
+            background: #666;
+        }
+        
+        .variable-buttons button[type="submit"] {
+            background: #007acc;
+            color: #ffffff;
+        }
+        
+        .variable-buttons button[type="submit"]:hover {
+            background: #005999;
+        }
     </style>
 </head>
 <body>
@@ -612,6 +702,79 @@
             }
         }
 
+        // Extraer variables del contenido del snippet
+        function extractVariables(content) {
+            const varPattern = /\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g;
+            const variables = {};
+            let match;
+            while ((match = varPattern.exec(content)) !== null) {
+                const varName = match[1];
+                // Excluir funciones reservadas
+                if (!['date', 'time', 'clipboard'].includes(varName)) {
+                    variables[varName] = '';
+                }
+            }
+            return variables;
+        }
+
+        // Mostrar form para variables
+        function showVariableForm(snippetName, variables) {
+            return new Promise((resolve) => {
+                const modal = document.createElement('div');
+                modal.className = 'variable-modal';
+                modal.innerHTML = `
+                    <div class="variable-modal-content">
+                        <h3>Variables para "${snippetName}"</h3>
+                        <form id="variableForm">
+                            ${Object.keys(variables).map(varName => `
+                                <div class="variable-input">
+                                    <label for="${varName}">${varName}:</label>
+                                    <input type="text" id="${varName}" name="${varName}" placeholder="Valor para ${varName}">
+                                </div>
+                            `).join('')}
+                            <div class="variable-buttons">
+                                <button type="button" id="cancelBtn">Cancelar</button>
+                                <button type="submit">Expandir</button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Focus en primer input
+                const firstInput = modal.querySelector('input');
+                if (firstInput) firstInput.focus();
+                
+                // Cancelar
+                modal.querySelector('#cancelBtn').addEventListener('click', () => {
+                    document.body.removeChild(modal);
+                    resolve(null);
+                });
+                
+                // Submit
+                modal.querySelector('#variableForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const userVars = {};
+                    for (const [key, value] of formData.entries()) {
+                        userVars[key] = value;
+                    }
+                    document.body.removeChild(modal);
+                    resolve(userVars);
+                });
+                
+                // Cerrar con Escape
+                document.addEventListener('keydown', function escHandler(e) {
+                    if (e.key === 'Escape') {
+                        document.removeEventListener('keydown', escHandler);
+                        document.body.removeChild(modal);
+                        resolve(null);
+                    }
+                });
+            });
+        }
+
         // Aplicar filtros combinados (búsqueda + tags) con debouncing
         const applyFilters = debounce(() => {
             const query = searchInput.value.trim();
@@ -730,8 +893,20 @@
             try {
                 showLoading();
                 
-                // TODO: Si el snippet tiene variables, mostrar form
-                const variables = {};
+                // Extraer variables del snippet
+                const variables = extractVariables(snippet.content);
+                
+                if (Object.keys(variables).length > 0) {
+                    // Mostrar form para variables
+                    const userVars = await showVariableForm(snippet.name, variables);
+                    if (userVars === null) {
+                        // Usuario canceló
+                        hideLoading();
+                        return;
+                    }
+                } else {
+                    // No hay variables
+                }
 
                 const result = await ipcRenderer.invoke('expand-snippet', snippet.id, variables);
                 
