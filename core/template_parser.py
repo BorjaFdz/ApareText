@@ -217,17 +217,22 @@ class TemplateParser:
         if open_braces != close_braces:
             return False, f"Unbalanced braces: {open_braces} opening, {close_braces} closing"
 
-        # Verificar funciones válidas
-        for match in self.FUNCTION_PATTERN.finditer(template):
-            func_name = match.group(1)
-            if func_name not in {"date", "clipboard", "time"}:
-                return False, f"Unknown function: {func_name}"
-
-        # Verificar formato de variables
-        all_vars = self.VARIABLE_PATTERN.findall(template)
-        for var in all_vars:
-            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", var):
-                return False, f"Invalid variable name: {var}"
+        # Encontrar todos los patrones {{...}}
+        all_patterns = re.findall(r'\{\{([^}]+)\}\}', template)
+        
+        for pattern in all_patterns:
+            # Verificar si es función conocida
+            func_name = pattern.split(':', 1)[0] if ':' in pattern else pattern
+            if func_name in {"date", "clipboard", "time"}:
+                # Es una función válida
+                continue
+            elif pattern == "|":
+                # Cursor marker es válido
+                continue
+            else:
+                # Debe ser variable válida
+                if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", pattern):
+                    return False, f"Invalid variable name: {pattern}"
 
         return True, None
 

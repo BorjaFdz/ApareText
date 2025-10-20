@@ -67,7 +67,7 @@ class DBMaintenance:
         print(f"\n📝 Total variables: {total_vars}")
         
         # Verificar logs de uso
-        cursor.execute("SELECT COUNT(*) FROM usage_logs")
+        cursor.execute("SELECT COUNT(*) FROM usage_log")
         total_logs = cursor.fetchone()[0]
         print(f"📈 Total registros de uso: {total_logs}")
         
@@ -163,7 +163,7 @@ class DBMaintenance:
         cursor.execute("""
             SELECT s.name, s.abbreviation, COUNT(u.id) as uses
             FROM snippets s
-            LEFT JOIN usage_logs u ON s.id = u.snippet_id
+            LEFT JOIN usage_log u ON s.id = u.snippet_id
             GROUP BY s.id
             ORDER BY uses DESC
             LIMIT 10
@@ -174,7 +174,7 @@ class DBMaintenance:
         
         # Uso en últimos 7 días
         cursor.execute("""
-            SELECT COUNT(*) FROM usage_logs 
+            SELECT COUNT(*) FROM usage_log 
             WHERE timestamp >= datetime('now', '-7 days')
         """)
         recent_uses = cursor.fetchone()[0]

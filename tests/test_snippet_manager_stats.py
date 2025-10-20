@@ -3,7 +3,7 @@ Tests para las funciones de estadísticas del SnippetManager.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from unittest.mock import Mock
 
 from core.database import Database
@@ -76,7 +76,7 @@ class TestSnippetManagerStats:
             session.commit()
 
             # Crear logs de uso
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             logs = [
                 UsageLogDB(
                     snippet_id=snippet1.id,
@@ -136,7 +136,7 @@ class TestSnippetManagerStats:
             session.commit()
 
             # Crear logs en diferentes días
-            base_date = datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)
+            base_date = datetime.now(UTC).replace(hour=12, minute=0, second=0, microsecond=0)
             logs = []
             for i in range(10):
                 log_date = base_date - timedelta(days=i)
@@ -179,7 +179,7 @@ class TestSnippetManagerStats:
             snippet1_id = snippet1.id  # Store ID before session closes
 
             # Crear logs para ambos snippets
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             logs = [
                 UsageLogDB(snippet_id=snippet1.id, timestamp=now, source="desktop"),
                 UsageLogDB(snippet_id=snippet1.id, timestamp=now - timedelta(hours=1), source="desktop"),
@@ -207,7 +207,7 @@ class TestSnippetManagerStats:
             session.commit()
 
             # Crear logs en diferentes horas y días
-            base_date = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+            base_date = datetime.now(UTC).replace(hour=9, minute=0, second=0, microsecond=0)
             logs = []
 
             # Lunes: 3 usos
@@ -256,7 +256,7 @@ class TestSnippetManagerStats:
             session.commit()
 
             # Crear logs en diferentes horas
-            base_date = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+            base_date = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
             hours_to_test = [9, 14, 9, 10, 14, 14]  # Más usos en hora 14
 
             for hour in hours_to_test:
@@ -287,7 +287,7 @@ class TestSnippetManagerStats:
             session.commit()
 
             # Crear logs en diferentes días de la semana
-            base_date = datetime.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)
+            base_date = datetime.now(UTC).replace(hour=12, minute=0, second=0, microsecond=0)
 
             # Encontrar el lunes de esta semana
             monday = base_date - timedelta(days=base_date.weekday())

@@ -3,7 +3,7 @@ Gestor de snippets - CRUD y búsqueda.
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -52,10 +52,14 @@ class SnippetManager:
                 id=snippet.id,
                 name=snippet.name,
                 abbreviation=snippet.abbreviation,
+                snippet_type=snippet.snippet_type.value,
                 tags=self._tags_to_string(snippet.tags),
+                category=snippet.category,
                 content_text=snippet.content_text,
                 content_html=snippet.content_html,
                 is_rich=snippet.is_rich,
+                image_data=snippet.image_data,
+                thumbnail=snippet.thumbnail,
                 scope_type=snippet.scope_type.value,
                 scope_values=json.dumps(snippet.scope_values),
                 caret_marker=snippet.caret_marker,
@@ -155,7 +159,7 @@ class SnippetManager:
             snippet_db.scope_values = json.dumps(snippet.scope_values)
             snippet_db.caret_marker = snippet.caret_marker
             snippet_db.enabled = snippet.enabled
-            snippet_db.updated_at = datetime.utcnow()
+            snippet_db.updated_at = datetime.now(UTC)
 
             # Eliminar variables antiguas
             session.query(SnippetVariableDB).filter_by(snippet_id=snippet_id).delete()
@@ -400,7 +404,7 @@ class SnippetManager:
                     stats["by_month"][month] = stats["by_month"].get(month, 0) + 1
 
             # Calcular series temporales
-            now = datetime.utcnow()
+            now = datetime.now(UTC)
             
             # Uso diario (últimos 30 días)
             daily_counts = {}
@@ -499,7 +503,7 @@ class SnippetManager:
                 }
 
             # Actividad reciente (últimos 7 días)
-            week_ago = datetime.utcnow() - timedelta(days=7)
+            week_ago = datetime.now(UTC) - timedelta(days=7)
             recent_logs = session.query(UsageLogDB).filter(UsageLogDB.timestamp >= week_ago).all()
             stats["recent_activity"] = len(recent_logs)
 
@@ -539,10 +543,14 @@ class SnippetManager:
             id=snippet_db.id,
             name=snippet_db.name,
             abbreviation=snippet_db.abbreviation,
+            snippet_type=snippet_db.snippet_type,
             tags=self._string_to_tags(snippet_db.tags),
+            category=snippet_db.category,
             content_text=snippet_db.content_text,
             content_html=snippet_db.content_html,
             is_rich=snippet_db.is_rich,
+            image_data=snippet_db.image_data,
+            thumbnail=snippet_db.thumbnail,
             scope_type=snippet_db.scope_type,
             scope_values=json.loads(snippet_db.scope_values) if snippet_db.scope_values else [],
             caret_marker=snippet_db.caret_marker,
@@ -588,7 +596,7 @@ class SnippetManager:
             scope_values=snippet_db.scope_values,
             caret_marker=snippet_db.caret_marker,
             enabled=snippet_db.enabled,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(UTC),
             change_reason=change_reason
         )
 
@@ -713,7 +721,7 @@ class SnippetManager:
             snippet_db.scope_values = version_db.scope_values
             snippet_db.caret_marker = version_db.caret_marker
             snippet_db.enabled = version_db.enabled
-            snippet_db.updated_at = datetime.utcnow()
+            snippet_db.updated_at = datetime.now(UTC)
 
             # Restaurar variables
             session.query(SnippetVariableDB).filter_by(snippet_id=snippet_id).delete()

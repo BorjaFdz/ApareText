@@ -2,18 +2,27 @@
 Modelos de datos usando Pydantic para validación y SQLAlchemy para persistencia.
 """
 
-from datetime import datetime
+from datetime import datetime, UTC
 from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_base, relationship
 
 # SQLAlchemy Base
 Base = declarative_base()
+
+
+def utc_now():
+    """Return current UTC datetime for SQLAlchemy defaults."""
+    return datetime.now(UTC)
+
+
+def utc_now_factory():
+    """Return current UTC datetime for Pydantic default_factory."""
+    return datetime.now(UTC)
 
 
 # Enums
@@ -65,8 +74,8 @@ class SnippetDB(Base):
     caret_marker = Column(String, default="{{|}}")
     usage_count = Column(Integer, default=0, index=True)
     enabled = Column(Boolean, default=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now, index=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # Relaciones
     variables = relationship("SnippetVariableDB", back_populates="snippet", cascade="all, delete-orphan")
@@ -108,7 +117,7 @@ class UsageLogDB(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     snippet_id = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=utc_now)
     source = Column(String, nullable=True)  # 'desktop', 'extension', 'web'
     target_app = Column(String, nullable=True)  # 'slack.exe', 'chrome.exe'
     target_domain = Column(String, nullable=True)  # 'twitter.com', 'gmail.com'
@@ -136,7 +145,7 @@ class SnippetVersionDB(Base):
     scope_values = Column(Text, nullable=True)
     caret_marker = Column(String, default="{{|}}")
     enabled = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)  # Cuando se creó esta versión
+    created_at = Column(DateTime, default=utc_now)  # Cuando se creó esta versión
     change_reason = Column(String, nullable=True)  # Razón del cambio (opcional)
 
     # Relaciones
@@ -206,8 +215,7 @@ class SnippetVariable(BaseModel):
                 raise ValueError(f"Invalid regex pattern: {v}")
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Snippet(BaseModel):
@@ -230,8 +238,8 @@ class Snippet(BaseModel):
     variables: list[SnippetVariable] = Field(default_factory=list)
     usage_count: int = 0
     enabled: bool = True
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now_factory)
+    updated_at: datetime = Field(default_factory=utc_now_factory)
 
     @field_validator("abbreviation")
     @classmethod
@@ -288,8 +296,7 @@ class Snippet(BaseModel):
                     raise ValueError(f"Invalid domain format: {domain}")
         return v
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     def __str__(self):
         return f"Snippet(id={self.id}, name='{self.name}', abbr='{self.abbreviation}')"
@@ -315,12 +322,11 @@ class SnippetVersion(BaseModel):
     scope_values: list[str] = Field(default_factory=list)
     caret_marker: str = "{{|}}"
     enabled: bool = True
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now_factory)
     change_reason: Optional[str] = None
     variables: list[SnippetVariable] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     def __str__(self):
         return f"SnippetVersion(id={self.id}, snippet_id={self.snippet_id}, version={self.version_number})"
@@ -353,19 +359,17 @@ class Settings(BaseModel):
     backup_path: Optional[str] = None
     backup_frequency: int = 7  # días
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SnippetExport(BaseModel):
     """Formato de exportación de snippets."""
 
     version: str = "1.0.0"
-    exported_at: datetime = Field(default_factory=datetime.utcnow)
+    exported_at: datetime = Field(default_factory=utc_now_factory)
     snippets: list[Snippet]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UsageLog(BaseModel):
@@ -373,10 +377,9 @@ class UsageLog(BaseModel):
 
     id: Optional[int] = None
     snippet_id: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=utc_now_factory)
     source: Optional[str] = None  # 'desktop', 'extension', 'web'
     target_app: Optional[str] = None
     target_domain: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
