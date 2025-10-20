@@ -52,18 +52,20 @@ class SnippetDB(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
     name = Column(String, nullable=False, index=True)
     abbreviation = Column(String, nullable=True, index=True)
-    snippet_type = Column(String, default=SnippetType.TEXT.value)  # 'text' o 'image'
-    tags = Column(String, nullable=True)  # CSV: "twitter,outreach,morning"
+    snippet_type = Column(String, default=SnippetType.TEXT.value, index=True)  # 'text' o 'image'
+    tags = Column(String, nullable=True, index=True)  # CSV: "twitter,outreach,morning"
+    category = Column(String, nullable=True, index=True)  # Categoría del snippet
     content_text = Column(Text, nullable=True)
     content_html = Column(Text, nullable=True)
     is_rich = Column(Boolean, default=False)
     image_data = Column(Text, nullable=True)  # Base64 image data para snippets tipo IMAGE
+    thumbnail = Column(Text, nullable=True)  # Miniatura para snippets HTML
     scope_type = Column(String, default=ScopeType.GLOBAL.value)
     scope_values = Column(Text, nullable=True)  # JSON array
     caret_marker = Column(String, default="{{|}}")
-    usage_count = Column(Integer, default=0)
-    enabled = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    usage_count = Column(Integer, default=0, index=True)
+    enabled = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relaciones
@@ -112,6 +114,55 @@ class UsageLogDB(Base):
     target_domain = Column(String, nullable=True)  # 'twitter.com', 'gmail.com'
 
 
+class SnippetVersionDB(Base):
+    """Versión histórica de un snippet para undo/redo."""
+
+    __tablename__ = "snippet_versions"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    snippet_id = Column(String, ForeignKey("snippets.id", ondelete="CASCADE"), nullable=False, index=True)
+    version_number = Column(Integer, nullable=False)  # Número de versión (1, 2, 3...)
+    name = Column(String, nullable=False)
+    abbreviation = Column(String, nullable=True)
+    snippet_type = Column(String, default=SnippetType.TEXT.value)
+    tags = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    content_text = Column(Text, nullable=True)
+    content_html = Column(Text, nullable=True)
+    is_rich = Column(Boolean, default=False)
+    image_data = Column(Text, nullable=True)
+    thumbnail = Column(Text, nullable=True)
+    scope_type = Column(String, default=ScopeType.GLOBAL.value)
+    scope_values = Column(Text, nullable=True)
+    caret_marker = Column(String, default="{{|}}")
+    enabled = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)  # Cuando se creó esta versión
+    change_reason = Column(String, nullable=True)  # Razón del cambio (opcional)
+
+    # Relaciones
+    variables = relationship("SnippetVersionVariableDB", back_populates="version", cascade="all, delete-orphan")
+
+
+class SnippetVersionVariableDB(Base):
+    """Variables de una versión específica de snippet."""
+
+    __tablename__ = "snippet_version_variables"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    version_id = Column(String, ForeignKey("snippet_versions.id", ondelete="CASCADE"), nullable=False)
+    key = Column(String, nullable=False)
+    label = Column(String, nullable=True)
+    type = Column(String, nullable=False, default=VariableType.TEXT.value)
+    placeholder = Column(String, nullable=True)
+    default_value = Column(String, nullable=True)
+    required = Column(Boolean, default=False)
+    regex = Column(String, nullable=True)
+    options = Column(Text, nullable=True)
+
+    # Relaciones
+    version = relationship("SnippetVersionDB", back_populates="variables")
+
+
 # Modelos Pydantic (Validación y API)
 class SnippetVariable(BaseModel):
     """Variable dentro de un snippet."""
@@ -143,6 +194,18 @@ class SnippetVariable(BaseModel):
             raise ValueError("options is required when type is 'select'")
         return v
 
+    @field_validator("regex")
+    @classmethod
+    def validate_regex(cls, v: Optional[str]) -> Optional[str]:
+        """Validar que el patrón regex sea válido."""
+        if v:
+            try:
+                import re
+                re.compile(v)
+            except re.error:
+                raise ValueError(f"Invalid regex pattern: {v}")
+        return v
+
     class Config:
         from_attributes = True
 
@@ -155,10 +218,12 @@ class Snippet(BaseModel):
     abbreviation: Optional[str] = Field(None, max_length=50)
     snippet_type: SnippetType = SnippetType.TEXT
     tags: list[str] = Field(default_factory=list)
+    category: Optional[str] = None
     content_text: Optional[str] = None
     content_html: Optional[str] = None
     is_rich: bool = False
     image_data: Optional[str] = None  # Base64 image data para snippets tipo IMAGE
+    thumbnail: Optional[str] = None  # Miniatura para snippets HTML
     scope_type: ScopeType = ScopeType.GLOBAL
     scope_values: list[str] = Field(default_factory=list)
     caret_marker: str = "{{|}}"
@@ -183,18 +248,6 @@ class Snippet(BaseModel):
         if isinstance(v, str):
             return [tag.strip() for tag in v.split(",") if tag.strip()]
         return v or []
-
-    @field_validator("regex")
-    @classmethod
-    def validate_regex(cls, v: Optional[str]) -> Optional[str]:
-        """Validar que el patrón regex sea válido."""
-        if v:
-            try:
-                import re
-                re.compile(v)
-            except re.error:
-                raise ValueError(f"Invalid regex pattern: {v}")
-        return v
 
     @field_validator("image_data")
     @classmethod
@@ -240,6 +293,37 @@ class Snippet(BaseModel):
 
     def __str__(self):
         return f"Snippet(id={self.id}, name='{self.name}', abbr='{self.abbreviation}')"
+
+
+class SnippetVersion(BaseModel):
+    """Versión histórica de un snippet."""
+
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    snippet_id: str
+    version_number: int
+    name: str = Field(..., min_length=1, max_length=200)
+    abbreviation: Optional[str] = Field(None, max_length=50)
+    snippet_type: SnippetType = SnippetType.TEXT
+    tags: list[str] = Field(default_factory=list)
+    category: Optional[str] = None
+    content_text: Optional[str] = None
+    content_html: Optional[str] = None
+    is_rich: bool = False
+    image_data: Optional[str] = None
+    thumbnail: Optional[str] = None
+    scope_type: ScopeType = ScopeType.GLOBAL
+    scope_values: list[str] = Field(default_factory=list)
+    caret_marker: str = "{{|}}"
+    enabled: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    change_reason: Optional[str] = None
+    variables: list[SnippetVariable] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
+
+    def __str__(self):
+        return f"SnippetVersion(id={self.id}, snippet_id={self.snippet_id}, version={self.version_number})"
 
 
 class Settings(BaseModel):

@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from config import CORS_ORIGINS
+from server.config import CORS_ORIGINS
 
 # NOTE: avoid importing heavy core modules (SQLAlchemy, Pydantic models) at module import time.
 # Import them lazily in handlers to reduce startup/import overhead of the frozen binary.
@@ -48,6 +48,29 @@ class APISnippet(BaseModel):
     enabled: bool = True
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class APISnippetVersion(BaseModel):
+    id: str | None = None
+    snippet_id: str
+    version_number: int
+    name: str
+    abbreviation: str | None = None
+    snippet_type: str = "text"
+    tags: list[str] = []
+    category: str | None = None
+    content_text: str | None = None
+    content_html: str | None = None
+    is_rich: bool = False
+    image_data: str | None = None
+    thumbnail: str | None = None
+    scope_type: str = "global"
+    scope_values: list[str] = []
+    caret_marker: str = "{{|}}"
+    enabled: bool = True
+    created_at: str | None = None
+    change_reason: str | None = None
+    variables: list[APISnippetVariable] = []
 
 
 def get_snippet_manager():
@@ -275,6 +298,111 @@ async def delete_snippet(snippet_id: str):
     return None
 
 
+# Versiones de snippets
+@app.get("/api/snippets/{snippet_id}/versions", response_model=list[APISnippetVersion])
+async def get_snippet_versions(snippet_id: str):
+    """Obtener todas las versiones de un snippet."""
+    manager = get_snippet_manager()
+
+    # Verificar que el snippet existe
+    snippet = manager.get_snippet(snippet_id)
+    if not snippet:
+        raise HTTPException(status_code=404, detail="Snippet not found")
+
+    versions = manager.get_snippet_versions(snippet_id)
+
+    # Convertir a formato API
+    api_versions = []
+    for version in versions:
+        api_version = APISnippetVersion(
+            id=version.id,
+            snippet_id=version.snippet_id,
+            version_number=version.version_number,
+            name=version.name,
+            abbreviation=version.abbreviation,
+            snippet_type=version.snippet_type,
+            tags=version.tags,
+            category=version.category,
+            content_text=version.content_text,
+            content_html=version.content_html,
+            is_rich=version.is_rich,
+            image_data=version.image_data,
+            thumbnail=version.thumbnail,
+            scope_type=version.scope_type,
+            scope_values=version.scope_values,
+            caret_marker=version.caret_marker,
+            enabled=version.enabled,
+            created_at=version.created_at.isoformat() if version.created_at else None,
+            change_reason=version.change_reason,
+            variables=[
+                APISnippetVariable(
+                    id=var.id,
+                    key=var.key,
+                    label=var.label,
+                    type=var.type,
+                    placeholder=var.placeholder,
+                    default_value=var.default_value,
+                    required=var.required,
+                    regex=var.regex,
+                    options=var.options,
+                )
+                for var in version.variables
+            ]
+        )
+        api_versions.append(api_version)
+
+    return api_versions
+
+
+@app.post("/api/snippets/{snippet_id}/versions/{version_id}/restore", response_model=APISnippet)
+async def restore_snippet_version(snippet_id: str, version_id: str):
+    """Restaurar un snippet a una versión específica."""
+    manager = get_snippet_manager()
+
+    # Verificar que el snippet existe
+    snippet = manager.get_snippet(snippet_id)
+    if not snippet:
+        raise HTTPException(status_code=404, detail="Snippet not found")
+
+    restored_snippet = manager.restore_snippet_version(snippet_id, version_id)
+    if not restored_snippet:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    # Convertir a formato API
+    return APISnippet(
+        id=restored_snippet.id,
+        name=restored_snippet.name,
+        abbreviation=restored_snippet.abbreviation,
+        snippet_type=restored_snippet.snippet_type,
+        tags=restored_snippet.tags,
+        content_text=restored_snippet.content_text,
+        content_html=restored_snippet.content_html,
+        is_rich=restored_snippet.is_rich,
+        image_data=restored_snippet.image_data,
+        scope_type=restored_snippet.scope_type,
+        scope_values=restored_snippet.scope_values,
+        caret_marker=restored_snippet.caret_marker,
+        variables=[
+            APISnippetVariable(
+                id=var.id,
+                key=var.key,
+                label=var.label,
+                type=var.type,
+                placeholder=var.placeholder,
+                default_value=var.default_value,
+                required=var.required,
+                regex=var.regex,
+                options=var.options,
+            )
+            for var in restored_snippet.variables
+        ],
+        usage_count=restored_snippet.usage_count,
+        enabled=restored_snippet.enabled,
+        created_at=restored_snippet.created_at.isoformat() if restored_snippet.created_at else None,
+        updated_at=restored_snippet.updated_at.isoformat() if restored_snippet.updated_at else None,
+    )
+
+
 # Búsqueda
 @app.get("/api/snippets/search/{query}", response_model=list[APISnippet])
 async def search_snippets(
@@ -473,7 +601,8 @@ async def import_snippets(
             "imported": imported_count,
             "skipped": skipped_count,
             "message": f"Importados {imported_count} snippets ({skipped_count} omitidos)"
-        }    except Exception as e:
+        }
+    except Exception as e:
         print(f"[ApareText] Error in import: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 

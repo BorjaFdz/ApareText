@@ -34,11 +34,127 @@
             --bg-main: rgba(30, 30, 35, 0.95);
             --bg-sidebar: rgba(20, 20, 25, 0.8);
             --bg-card: rgba(40, 40, 45, 0.95);
+            --bg-editor: rgba(25, 25, 30, 0.9);
             --text-primary: rgba(255, 255, 255, 0.95);
             --text-secondary: rgba(255, 255, 255, 0.6);
+            --text-muted: rgba(255, 255, 255, 0.4);
             --border-color: rgba(255, 255, 255, 0.12);
+            --border-light: rgba(255, 255, 255, 0.08);
             --hover-bg: rgba(10, 132, 255, 0.15);
             --active-bg: rgba(10, 132, 255, 0.25);
+            --input-bg: rgba(35, 35, 40, 0.8);
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Elementos específicos para tema oscuro */
+        [data-theme="dark"] input,
+        [data-theme="dark"] select,
+        [data-theme="dark"] textarea {
+            background: var(--input-bg);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] input::placeholder,
+        [data-theme="dark"] textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .ql-toolbar {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .ql-container {
+            background: var(--bg-editor);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .ql-editor {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .ql-editor.ql-blank::before {
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .toolbar {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .btn-icon {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .btn-icon:hover {
+            background: var(--hover-bg);
+            border-color: var(--primary-color);
+        }
+
+        [data-theme="dark"] .snippet-item {
+            background: var(--bg-card);
+            border-color: var(--border-light);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .snippet-item:hover {
+            background: var(--hover-bg);
+        }
+
+        [data-theme="dark"] .sidebar {
+            background: var(--bg-sidebar);
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .sidebar-header h1 {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .sidebar-header p {
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .search-input {
+            background: var(--input-bg);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .modal-content {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .modal-header {
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .modal-header h2 {
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark"] .modal-close {
+            color: var(--text-secondary);
+        }
+
+        [data-theme="dark"] .modal-close:hover {
+            color: var(--text-primary);
+            background: var(--hover-bg);
+        }
+
+        /* Animaciones */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         * {
@@ -49,7 +165,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: #f5f5f7;
+            background: var(--bg-main);
             overflow: hidden;
             padding: 0;
             margin: 0;
@@ -61,7 +177,7 @@
         .manager-container {
             width: 100%;
             height: 100%;
-            background: #ffffff;
+            background: var(--bg-main);
             overflow: hidden;
             display: flex;
         }
@@ -175,7 +291,8 @@
         }
 
         .snippet-item-thumbnail {
-            /* Thumbnail CSS removed */
+            display: inline-block; /* ensure the thumbnail container participates in layout */
+            vertical-align: middle;
         }
 
         .snippet-item-content {
@@ -185,15 +302,28 @@
         }
 
         .snippet-item-thumb-container {
-            /* Thumbnail container CSS removed */
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .snippet-item-thumb-container img {
-            /* Thumbnail image CSS removed */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .snippet-item-thumb-container .thumb-placeholder {
-            /* Thumbnail placeholder CSS removed */
+            width: 24px;
+            height: 24px;
+            opacity: 0.6;
         }
 
         .snippet-item-info {
@@ -244,8 +374,11 @@
                 rgba(255, 255, 255, 0.6), 
                 rgba(100, 180, 255, 0.3));
             -webkit-mask: 
-                linear-gradient(#fff 0 0) content-box, 
-                linear-gradient(#fff 0 0);
+                linear-gradient(var(--text-primary) 0 0) content-box, 
+                linear-gradient(var(--text-primary) 0 0);
+            mask: 
+                linear-gradient(var(--text-primary) 0 0) content-box, 
+                linear-gradient(var(--text-primary) 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             opacity: 0.7;
@@ -825,6 +958,199 @@
             border-bottom-right-radius: 10px;
             border-color: rgba(0, 0, 0, 0.1) !important;
         }
+
+        /* Estilos para categorías */
+        .category-section {
+            margin-bottom: 24px;
+        }
+
+        .category-header {
+            padding: 12px 16px;
+            background: rgba(0, 122, 255, 0.08);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(0, 122, 255, 0.15);
+        }
+
+        .category-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        .category-snippets {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .category-snippets .snippet-item {
+            margin-left: 16px;
+            margin-bottom: 2px;
+            border-left: 3px solid rgba(0, 122, 255, 0.2);
+        }
+
+        .category-snippets .snippet-item:hover {
+            border-left-color: rgba(0, 122, 255, 0.4);
+        }
+
+        .category-snippets .snippet-item.active {
+            border-left-color: rgba(0, 122, 255, 0.6);
+        }
+
+        /* Estilos para modales */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: rgba(0, 0, 0, 0.87);
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: rgba(0, 0, 0, 0.5);
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        /* Estilos para versiones */
+        .version-item {
+            padding: 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: rgba(248, 248, 250, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .version-item:hover {
+            background: rgba(248, 248, 250, 0.8);
+            border-color: rgba(0, 122, 255, 0.3);
+        }
+
+        .version-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .version-number {
+            font-weight: 600;
+            color: rgba(0, 122, 255, 0.8);
+            background: rgba(0, 122, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .version-date {
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .version-name {
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.87);
+            margin-bottom: 4px;
+        }
+
+        .version-reason {
+            font-size: 13px;
+            color: rgba(0, 0, 0, 0.6);
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+
+        .version-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .version-btn {
+            padding: 6px 12px;
+            border: 1px solid rgba(0, 122, 255, 0.3);
+            background: rgba(0, 122, 255, 0.1);
+            color: rgba(0, 122, 255, 0.8);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .version-btn:hover {
+            background: rgba(0, 122, 255, 0.2);
+            border-color: rgba(0, 122, 255, 0.5);
+        }
+
+        .version-btn.restore {
+            background: rgba(52, 199, 89, 0.1);
+            border-color: rgba(52, 199, 89, 0.3);
+            color: rgba(52, 199, 89, 0.8);
+        }
+
+        .version-btn.restore:hover {
+            background: rgba(52, 199, 89, 0.2);
+            border-color: rgba(52, 199, 89, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -889,6 +1215,7 @@
         <div class="toolbar" id="toolbar" style="display: none;">
             <button class="btn-icon" id="saveBtn">💾 Guardar</button>
             <button class="btn-icon" id="duplicateBtn">📋 Duplicar</button>
+            <button class="btn-icon" id="historyBtn">📚 Historial</button>
             <button class="btn-icon btn-danger" id="deleteBtn">🗑️ Eliminar</button>
             <div style="flex: 1;"></div>
             <div class="toggle-switch active" id="enableToggle">
@@ -960,6 +1287,18 @@
                             <h3 style="margin-bottom: 16px; color: rgba(0, 0, 0, 0.75); font-size: 16px;">🏷️ Snippets por Tag</h3>
                             <canvas id="tagsChart" style="max-height: 300px;"></canvas>
                         </div>
+                        
+                        <!-- Daily Usage Trends Chart -->
+                        <div style="background: rgba(248, 248, 250, 0.7); border-radius: 12px; padding: 20px;">
+                            <h3 style="margin-bottom: 16px; color: rgba(0, 0, 0, 0.75); font-size: 16px;">📈 Tendencia Diaria (30 días)</h3>
+                            <canvas id="dailyUsageChart" style="max-height: 300px;"></canvas>
+                        </div>
+                        
+                        <!-- Category Distribution Chart -->
+                        <div style="background: rgba(248, 248, 250, 0.7); border-radius: 12px; padding: 20px;">
+                            <h3 style="margin-bottom: 16px; color: rgba(0, 0, 0, 0.75); font-size: 16px;">📂 Distribución por Categoría</h3>
+                            <canvas id="categoryChart" style="max-height: 300px;"></canvas>
+                        </div>
                     </div>
 
                     <!-- Top Snippets List -->
@@ -968,7 +1307,11 @@
                         <p style="color: rgba(0, 0, 0, 0.5); text-align: center;">Cargando estadísticas...</p>
                     </div>
 
-                    <button class="btn-icon" onclick="hideStats()" style="margin-top: 24px;">⬅️ Volver</button>
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button class="btn-secondary" onclick="exportAnalytics('json')" style="flex: 1;">📊 Exportar JSON</button>
+                        <button class="btn-secondary" onclick="exportAnalytics('csv')" style="flex: 1;">📈 Exportar CSV</button>
+                        <button class="btn-icon" onclick="hideStats()">⬅️ Volver</button>
+                    </div>
                 </div>
             </div>
 
@@ -1014,6 +1357,23 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Categoría</label>
+                    <select class="form-input" id="categoryInput">
+                        <option value="">📁 Sin categoría</option>
+                        <option value="Trabajo">💼 Trabajo</option>
+                        <option value="Personal">🏠 Personal</option>
+                        <option value="Desarrollo">💻 Desarrollo</option>
+                        <option value="Comunicación">💬 Comunicación</option>
+                        <option value="Finanzas">💰 Finanzas</option>
+                        <option value="Salud">🏥 Salud</option>
+                        <option value="Educación">📚 Educación</option>
+                        <option value="Entretenimiento">🎮 Entretenimiento</option>
+                        <option value="Otros">📦 Otros</option>
+                    </select>
+                    <div class="form-hint">Organiza tus snippets por categorías</div>
+                </div>
+
                 <!-- Image Upload Section - Solo para snippets tipo IMAGE -->
                 <div class="form-group" id="imageUploadSection" style="display: none;">
                     <label class="form-label">🖼️ Imagen del Snippet</label>
@@ -1054,7 +1414,7 @@
                     <label class="form-label">Contenido</label>
                     
                     <!-- Editor WYSIWYG con Quill -->
-                    <div id="editor-container" style="height: 300px; background: white; border: 1px solid #ddd; border-radius: 8px;"></div>
+                    <div id="editor-container" style="height: 300px; background: var(--bg-editor); border: 1px solid var(--border-color); border-radius: 8px;"></div>
                     
                     <!-- Textarea oculto para plain text (cuando rich text está deshabilitado) -->
                     <textarea class="form-input form-textarea" id="contentInput" placeholder="Escribe el contenido del snippet aquí...
@@ -1170,6 +1530,21 @@ Puedes usar variables:
                     </div>
 
                     <button class="btn-icon" onclick="hideVoice()" style="margin-top: 24px;">⬅️ Volver</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Historial de Versiones -->
+        <div class="modal-overlay" id="historyModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📚 Historial de Versiones</h2>
+                    <button class="modal-close" onclick="hideHistoryModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="versionsList" style="max-height: 400px; overflow-y: auto;">
+                        <p style="text-align: center; color: rgba(0, 0, 0, 0.5);">Cargando versiones...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1347,38 +1722,113 @@ Puedes usar variables:
         });
 
         // Cargar snippets
+        // Variables para lazy loading
+        let allSnippets = [];
+        let loadedSnippets = [];
+        let currentPage = 0;
+        const SNIPPETS_PER_PAGE = 50;
+        let isLoading = false;
+        let hasMoreSnippets = true;
+
+        // Caché para búsquedas frecuentes
+        const searchCache = new Map();
+        const CACHE_SIZE_LIMIT = 20;
+
         async function loadSnippets() {
             try {
-                snippets = await ipcRenderer.invoke('get-snippets');
+                // Cargar todos los snippets inicialmente para filtros
+                allSnippets = await ipcRenderer.invoke('get-snippets');
+                loadedSnippets = [];
+                currentPage = 0;
+                hasMoreSnippets = true;
+                
+                // Limpiar caché al recargar
+                searchCache.clear();
+                
                 updateTagFilterOptions();
-                renderSnippetList();
+                loadNextPage();
             } catch (error) {
                 console.error('Error loading snippets:', error);
             }
         }
 
-        // Renderizar lista con filtros avanzados
+        // Cargar siguiente página de snippets
+        async function loadNextPage() {
+            if (isLoading || !hasMoreSnippets) return;
+            
+            isLoading = true;
+            const startIndex = currentPage * SNIPPETS_PER_PAGE;
+            const endIndex = startIndex + SNIPPETS_PER_PAGE;
+            
+            // Obtener la siguiente página de snippets
+            const nextSnippets = allSnippets.slice(startIndex, endIndex);
+            
+            if (nextSnippets.length === 0) {
+                hasMoreSnippets = false;
+                isLoading = false;
+                return;
+            }
+            
+            loadedSnippets = [...loadedSnippets, ...nextSnippets];
+            currentPage++;
+            
+            // Limpiar caché cuando se cargan nuevos snippets
+            searchCache.clear();
+            
+            // Re-renderizar con los snippets cargados
+            renderSnippetList();
+            isLoading = false;
+        }
+
+        // Funciones para caché de búsquedas
+        function getCacheKey(query, tagFilter, statusFilter, sortFilter) {
+            return `${query}|${tagFilter}|${statusFilter}|${sortFilter}`;
+        }
+
+        function getCachedResult(cacheKey) {
+            return searchCache.get(cacheKey);
+        }
+
+        function setCachedResult(cacheKey, result) {
+            // Mantener el caché dentro del límite
+            if (searchCache.size >= CACHE_SIZE_LIMIT) {
+                const firstKey = searchCache.keys().next().value;
+                searchCache.delete(firstKey);
+            }
+            searchCache.set(cacheKey, result);
+        }
+
+        // Renderizar lista con filtros avanzados y categorías
         function renderSnippetList() {
             const query = searchInput.value.toLowerCase();
             const tagFilter = document.getElementById('tagFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
             const sortFilter = document.getElementById('sortFilter').value;
+
+            const cacheKey = getCacheKey(query, tagFilter, statusFilter, sortFilter);
+            const cachedResult = getCachedResult(cacheKey);
             
-            // Filtrado
-            let filtered = snippets.filter(s => {
+            if (cachedResult) {
+                snippetList.innerHTML = cachedResult;
+                setupSnippetEventListeners();
+                return;
+            }
+
+            // Filtrado usando loadedSnippets
+            let filtered = loadedSnippets.filter(s => {
                 // Búsqueda por texto
                 const matchesQuery = s.name.toLowerCase().includes(query) ||
                                    s.abbreviation?.toLowerCase().includes(query) ||
                                    s.tags?.some(tag => tag.toLowerCase().includes(query));
-                
+
                 // Filtro por tag
                 const matchesTag = !tagFilter || s.tags?.includes(tagFilter);
-                
+
                 // Filtro por estado
                 let matchesStatus = true;
                 if (statusFilter === 'enabled') matchesStatus = s.enabled;
                 if (statusFilter === 'disabled') matchesStatus = !s.enabled;
-                
+
                 return matchesQuery && matchesTag && matchesStatus;
             });
 
@@ -1400,24 +1850,59 @@ Puedes usar variables:
                 }
             });
 
-            snippetList.innerHTML = filtered.map(snippet => {
-                const cleanAbbr = snippet.abbreviation ? 
-                    snippet.abbreviation.replace(/^;+/, '') : '';
-                const enabledBadge = snippet.enabled ? '' : '<span style="color: rgba(255,59,48,0.8); font-size: 11px;">●</span> ';
-                const usageCount = snippet.usage_count ? ` (${snippet.usage_count} usos)` : '';
-                
-                // Determinar tipo de snippet
-                const snippetType = snippet.snippet_type || 'text';
-                
-                // Thumbnail logic removed
-                return `
-                    <div class="snippet-item ${currentSnippet?.id === snippet.id ? 'active' : ''}" 
-                         data-id="${snippet.id}">
-                        <div class="snippet-item-content">
-                            <div class="snippet-item-info">
-                                <div class="snippet-item-name">${enabledBadge}${snippet.name}</div>
-                                <div class="snippet-item-abbr">${cleanAbbr ? ';' + cleanAbbr : 'Sin abreviatura'}${usageCount}</div>
+            // Agrupar por categorías
+            const categorized = {};
+            filtered.forEach(snippet => {
+                const category = snippet.category || '';
+                if (!categorized[category]) {
+                    categorized[category] = [];
+                }
+                categorized[category].push(snippet);
+            });
+
+            // Renderizar por categorías
+            const categoryOrder = ['', 'Trabajo', 'Personal', 'Desarrollo', 'Comunicación', 'Finanzas', 'Salud', 'Educación', 'Entretenimiento', 'Otros'];
+            const orderedCategories = categoryOrder.filter(cat => categorized[cat]);
+
+            snippetList.innerHTML = orderedCategories.map(category => {
+                const categorySnippets = categorized[category];
+                const categoryName = category || 'Sin categoría';
+                const categoryIcon = getCategoryIcon(category);
+
+                const snippetsHtml = categorySnippets.map(snippet => {
+                    const cleanAbbr = snippet.abbreviation ?
+                        snippet.abbreviation.replace(/^;+/, '') : '';
+                    const enabledBadge = snippet.enabled ? '' : '<span style="color: rgba(255,59,48,0.8); font-size: 11px;">●</span> ';
+                    const usageCount = snippet.usage_count ? ` (${snippet.usage_count} usos)` : '';
+
+                    // Determinar tipo de snippet
+                    const snippetType = snippet.snippet_type || 'text';
+
+                    return `
+                        <div class="snippet-item ${currentSnippet?.id === snippet.id ? 'active' : ''}"
+                             data-id="${snippet.id}">
+                            <div class="snippet-item-content">
+                                <div class="snippet-item-info">
+                                    <div class="snippet-item-name">${enabledBadge}${snippet.name}</div>
+                                    <div class="snippet-item-abbr">${cleanAbbr ? ';' + cleanAbbr : 'Sin abreviatura'}${usageCount}</div>
+                                </div>
                             </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="category-section">
+                        <div class="category-header">
+                            <h3 style="margin: 0; color: rgba(0, 0, 0, 0.75); font-size: 16px; font-weight: 600;">
+                                ${categoryIcon} ${categoryName}
+                                <span style="font-size: 12px; font-weight: 400; color: rgba(0, 0, 0, 0.5);">
+                                    (${categorySnippets.length})
+                                </span>
+                            </h3>
+                        </div>
+                        <div class="category-snippets">
+                            ${snippetsHtml}
                         </div>
                     </div>
                 `;
@@ -1427,16 +1912,74 @@ Puedes usar variables:
             document.querySelectorAll('.snippet-item').forEach(item => {
                 item.addEventListener('click', () => {
                     const id = item.dataset.id;
-                    const snippet = snippets.find(s => s.id === id);
+                    const snippet = loadedSnippets.find(s => s.id === id);
+                    editSnippet(snippet);
+                });
+            });
+
+            // Agregar indicador de carga si hay más snippets disponibles
+            if (hasMoreSnippets && loadedSnippets.length > 0) {
+                const loadingIndicator = `
+                    <div class="loading-indicator" style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                        Desplázate para cargar más snippets...
+                    </div>
+                `;
+                snippetList.innerHTML += loadingIndicator;
+            }
+
+            // Guardar resultado en caché
+            setCachedResult(cacheKey, snippetList.innerHTML);
+            
+            // Configurar event listeners
+            setupSnippetEventListeners();
+        }
+
+        // Configurar event listeners para snippets
+        function setupSnippetEventListeners() {
+            document.querySelectorAll('.snippet-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const id = item.dataset.id;
+                    const snippet = loadedSnippets.find(s => s.id === id);
                     editSnippet(snippet);
                 });
             });
         }
 
+        // Configurar scroll infinito
+        function setupInfiniteScroll() {
+            const snippetContainer = document.querySelector('.sidebar-content');
+            if (!snippetContainer) return;
+
+            snippetContainer.addEventListener('scroll', (e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.target;
+                
+                // Si estamos cerca del final (100px), cargar más
+                if (scrollTop + clientHeight >= scrollHeight - 100) {
+                    loadNextPage();
+                }
+            });
+        }
+
+        // Obtener icono para categoría
+        function getCategoryIcon(category) {
+            const icons = {
+                'Trabajo': '💼',
+                'Personal': '🏠',
+                'Desarrollo': '💻',
+                'Comunicación': '💬',
+                'Finanzas': '💰',
+                'Salud': '🏥',
+                'Educación': '📚',
+                'Entretenimiento': '🎮',
+                'Otros': '📦'
+            };
+            return icons[category] || '📁';
+        }
+
         // Actualizar opciones de tag filter
         function updateTagFilterOptions() {
             const tagSet = new Set();
-            snippets.forEach(s => {
+            allSnippets.forEach(s => {
                 if (s.tags && s.tags.length > 0) {
                     s.tags.forEach(tag => tagSet.add(tag));
                 }
@@ -1464,6 +2007,7 @@ Puedes usar variables:
             
             nameInput.value = '';
             abbrInput.value = '';
+            categoryInput.value = '';
             contentInput.value = '';
             quill.setContents([]); // Limpiar editor Quill
             richInput.checked = true; // Empezar con WYSIWYG por defecto
@@ -1504,6 +2048,7 @@ Puedes usar variables:
             
             nameInput.value = snippet.name;
             abbrInput.value = snippet.abbreviation?.replace(/^;+/, '') || '';
+            categoryInput.value = snippet.category || '';
             richInput.checked = snippet.is_rich;
             enabledInput.checked = snippet.enabled;
             
@@ -1616,6 +2161,7 @@ Puedes usar variables:
             const abbreviation = abbrInput.value.trim();
             const isRich = richInput.checked;
             const enabled = enabledInput.checked;
+            const category = categoryInput.value || null;
             
             // Determinar tipo de snippet
             const snippetType = typeImage.checked ? 'image' : 'text';
@@ -1641,6 +2187,7 @@ Puedes usar variables:
                 abbreviation: abbreviation || null,
                 snippet_type: snippetType,
                 tags: currentTags,
+                category: category,
                 content_text: snippetType === 'text' ? (isRich ? null : content) : null,
                 content_html: snippetType === 'text' ? (isRich ? content : null) : null,
                 is_rich: snippetType === 'text' ? isRich : false,
@@ -1722,6 +2269,7 @@ Puedes usar variables:
         newSnippetBtn.addEventListener('click', newSnippet);
         saveBtn.addEventListener('click', saveSnippet);
         duplicateBtn.addEventListener('click', duplicateSnippet);
+        historyBtn.addEventListener('click', showHistoryModal);
         deleteBtn.addEventListener('click', deleteSnippet);
         cancelBtn.addEventListener('click', hideEditor);
         searchInput.addEventListener('input', debounce(renderSnippetList, 200));
@@ -1875,7 +2423,7 @@ Puedes usar variables:
                 
                 // Capturar el preview actual
                 const canvas = await html2canvas(previewContainer, {
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--bg-card)',
                     scale: 2,
                     logging: false,
                     useCORS: true,
@@ -2080,16 +2628,25 @@ Puedes usar variables:
                 
                 // Actualizar valores básicos
                 document.getElementById('totalUses').textContent = totalUses;
-                document.getElementById('totalSnippets').textContent = snippets.length;
-                document.getElementById('enabledSnippets').textContent = 
-                    snippets.filter(s => s.enabled).length;
+                document.getElementById('totalSnippets').textContent = stats.total_snippets || 0;
+                document.getElementById('enabledSnippets').textContent = stats.enabled_snippets || 0;
                 
                 // Actualizar métricas avanzadas
                 document.getElementById('timeSaved').textContent = hoursSaved + 'h';
                 document.getElementById('productivity').textContent = productivity + '%';
                 document.getElementById('streak').textContent = streak;
                 
-                // Generar insights personalizados
+                // Mostrar métricas adicionales
+                document.getElementById('recentActivity').textContent = stats.recent_activity || 0;
+                document.getElementById('avgDailyUses').textContent = 
+                    stats.productivity_metrics?.avg_daily_uses ? 
+                    Math.round(stats.productivity_metrics.avg_daily_uses) : 0;
+                document.getElementById('mostActiveHour').textContent = 
+                    stats.productivity_metrics?.most_active_hour || 'N/A';
+                document.getElementById('mostActiveDay').textContent = 
+                    stats.productivity_metrics?.most_active_day || 'N/A';
+                
+                // Generar insights personalizados con métricas avanzadas
                 generateProductivityInsights(stats, totalUses, hoursSaved, productivity);
 
                 // Renderizar top snippets list
@@ -2103,6 +2660,7 @@ Puedes usar variables:
                                     <span style="color: rgba(0, 0, 0, 0.5); margin-right: 8px;">${index + 1}.</span>
                                     <span class="top-snippet-name">${item.name}</span>
                                     <span style="color: rgba(0, 0, 0, 0.4); font-size: 12px; margin-left: 8px;">(${item.abbreviation || 'sin abbr'})</span>
+                                    ${item.category ? `<span style="color: rgba(0, 122, 255, 0.7); font-size: 11px; margin-left: 6px;">[${item.category}]</span>` : ''}
                                 </div>
                                 <span class="top-snippet-count">${item.usage_count} usos</span>
                             </div>
@@ -2111,7 +2669,7 @@ Puedes usar variables:
                     topSnippetsList.innerHTML = '<p style="color: rgba(0, 0, 0, 0.5); text-align: center; padding: 20px;">Aún no hay estadísticas de uso</p>';
                 }
 
-                // Crear gráficas
+                // Crear gráficas avanzadas
                 createStatsCharts(stats);
             } catch (error) {
                 console.error('Error loading stats:', error);
@@ -2121,11 +2679,15 @@ Puedes usar variables:
 
         let topSnippetsChartInstance = null;
         let tagsChartInstance = null;
+        let dailyUsageChartInstance = null;
+        let categoryChartInstance = null;
 
         function createStatsCharts(stats) {
             // Limpiar gráficas anteriores
             if (topSnippetsChartInstance) topSnippetsChartInstance.destroy();
             if (tagsChartInstance) tagsChartInstance.destroy();
+            if (dailyUsageChartInstance) dailyUsageChartInstance.destroy();
+            if (categoryChartInstance) categoryChartInstance.destroy();
 
             // Chart 1: Top Snippets (Horizontal Bar)
             const topSnippetsCanvas = document.getElementById('topSnippetsChart');
@@ -2231,6 +2793,97 @@ Puedes usar variables:
                     }
                 });
             }
+
+            // Chart 3: Daily Usage Trends (Line Chart)
+            const dailyUsageCanvas = document.getElementById('dailyUsageChart');
+            const dailyUsage = stats.daily_usage || [];
+            
+            if (dailyUsage.length > 0) {
+                dailyUsageChartInstance = new Chart(dailyUsageCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: dailyUsage.map(d => {
+                            const date = new Date(d.date);
+                            return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+                        }),
+                        datasets: [{
+                            label: 'Usos Diarios',
+                            data: dailyUsage.map(d => d.count),
+                            borderColor: 'rgba(52, 199, 89, 1)',
+                            backgroundColor: 'rgba(52, 199, 89, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `${context.parsed.y} usos`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { precision: 0 }
+                            },
+                            x: {
+                                ticks: {
+                                    maxTicksLimit: 7
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Chart 4: Category Distribution (Bar Chart)
+            const categoryCanvas = document.getElementById('categoryChart');
+            const categoryStats = stats.category_stats || {};
+            
+            const categoryLabels = Object.keys(categoryStats);
+            const categoryData = Object.values(categoryStats);
+            
+            if (categoryLabels.length > 0) {
+                categoryChartInstance = new Chart(categoryCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: categoryLabels,
+                        datasets: [{
+                            label: 'Snippets',
+                            data: categoryData,
+                            backgroundColor: 'rgba(255, 149, 0, 0.6)',
+                            borderColor: 'rgba(255, 149, 0, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `${context.parsed.y} snippets`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { precision: 0 }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         function calculateStreak(stats) {
@@ -2294,6 +2947,130 @@ Puedes usar variables:
             // Limpiar gráficas
             if (topSnippetsChartInstance) topSnippetsChartInstance.destroy();
             if (tagsChartInstance) tagsChartInstance.destroy();
+            if (dailyUsageChartInstance) dailyUsageChartInstance.destroy();
+            if (categoryChartInstance) categoryChartInstance.destroy();
+        }
+
+        async function exportAnalytics(format) {
+            try {
+                showLoading('Exportando analíticas...');
+                
+                // Obtener estadísticas actuales
+                const stats = await ipcRenderer.invoke('get-stats');
+                
+                let content = '';
+                let filename = '';
+                let mimeType = '';
+                
+                if (format === 'json') {
+                    content = JSON.stringify(stats, null, 2);
+                    filename = `aparetext_analytics_${new Date().toISOString().split('T')[0]}.json`;
+                    mimeType = 'application/json';
+                } else if (format === 'csv') {
+                    // Convertir stats a CSV
+                    content = convertStatsToCSV(stats);
+                    filename = `aparetext_analytics_${new Date().toISOString().split('T')[0]}.csv`;
+                    mimeType = 'text/csv';
+                }
+                
+                // Guardar archivo usando el diálogo del sistema
+                const saved = await ipcRenderer.invoke('save-file-dialog', {
+                    defaultPath: filename,
+                    filters: [
+                        { name: format.toUpperCase(), extensions: [format] }
+                    ]
+                });
+
+                hideLoading();
+
+                if (saved) {
+                    showToast(`📊 Analíticas exportadas correctamente como ${format.toUpperCase()}`, 'success', 4000);
+                }
+            } catch (error) {
+                hideLoading();
+                console.error('Error exporting analytics:', error);
+                showToast('❌ Error al exportar analíticas: ' + error.message, 'error');
+            }
+        }
+
+        function convertStatsToCSV(stats) {
+            const lines = [];
+            
+            // Encabezados principales
+            lines.push('Métrica,Valor');
+            lines.push(`Total de Usos,${stats.total_uses || 0}`);
+            lines.push(`Total de Snippets,${stats.total_snippets || 0}`);
+            lines.push(`Snippets Activos,${stats.enabled_snippets || 0}`);
+            lines.push(`Actividad Reciente (7 días),${stats.recent_activity || 0}`);
+            lines.push(`Uso Promedio Diario,${stats.productivity_metrics?.avg_daily_uses ? Math.round(stats.productivity_metrics.avg_daily_uses) : 0}`);
+            lines.push(`Hora Más Activa,${stats.productivity_metrics?.most_active_hour || 'N/A'}`);
+            lines.push(`Día Más Activo,${stats.productivity_metrics?.most_active_day || 'N/A'}`);
+            lines.push('');
+            
+            // Uso por fuente
+            lines.push('Uso por Fuente');
+            lines.push('Fuente,Cantidad');
+            Object.entries(stats.by_source || {}).forEach(([source, count]) => {
+                lines.push(`${source},${count}`);
+            });
+            lines.push('');
+            
+            // Uso por aplicación
+            lines.push('Uso por Aplicación');
+            lines.push('Aplicación,Cantidad');
+            Object.entries(stats.by_app || {}).forEach(([app, count]) => {
+                lines.push(`${app},${count}`);
+            });
+            lines.push('');
+            
+            // Uso por dominio
+            lines.push('Uso por Dominio');
+            lines.push('Dominio,Cantidad');
+            Object.entries(stats.by_domain || {}).forEach(([domain, count]) => {
+                lines.push(`${domain},${count}`);
+            });
+            lines.push('');
+            
+            // Uso diario
+            lines.push('Uso Diario (Últimos 30 días)');
+            lines.push('Fecha,Cantidad');
+            (stats.daily_usage || []).forEach(item => {
+                lines.push(`${item.date},${item.count}`);
+            });
+            lines.push('');
+            
+            // Uso semanal
+            lines.push('Uso Semanal (Últimas 12 semanas)');
+            lines.push('Semana,Cantidad');
+            (stats.weekly_usage || []).forEach(item => {
+                lines.push(`${item.week},${item.count}`);
+            });
+            lines.push('');
+            
+            // Uso mensual
+            lines.push('Uso Mensual (Últimos 12 meses)');
+            lines.push('Mes,Cantidad');
+            (stats.monthly_usage || []).forEach(item => {
+                lines.push(`${item.month},${item.count}`);
+            });
+            lines.push('');
+            
+            // Top snippets
+            lines.push('Top Snippets');
+            lines.push('Nombre,Abreviatura,Uso,Categoría');
+            (stats.top_snippets || []).forEach(snippet => {
+                lines.push(`"${snippet.name}","${snippet.abbreviation || ''}",${snippet.usage_count},"${snippet.category || ''}"`);
+            });
+            lines.push('');
+            
+            // Estadísticas por categoría
+            lines.push('Snippets por Categoría');
+            lines.push('Categoría,Cantidad');
+            Object.entries(stats.category_stats || {}).forEach(([category, count]) => {
+                lines.push(`"${category}",${count}`);
+            });
+            
+            return lines.join('\n');
         }
 
         // 3. EXPORT/IMPORT
@@ -2493,6 +3270,118 @@ Puedes usar variables:
             if (emptyState) emptyState.style.display = 'block';
         }
 
+        // ============================================
+        // HISTORIAL DE VERSIONES
+        // ============================================
+
+        // Mostrar modal de historial
+        function showHistoryModal() {
+            if (!currentSnippet) {
+                showToast('Selecciona un snippet primero', 'warning');
+                return;
+            }
+
+            const modal = document.getElementById('historyModal');
+            modal.style.display = 'flex';
+            loadSnippetVersions();
+        }
+
+        // Ocultar modal de historial
+        function hideHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            modal.style.display = 'none';
+        }
+
+        // Cargar versiones del snippet actual
+        async function loadSnippetVersions() {
+            const versionsList = document.getElementById('versionsList');
+            versionsList.innerHTML = '<p style="text-align: center; color: rgba(0, 0, 0, 0.5);">Cargando versiones...</p>';
+
+            try {
+                const response = await fetch(`http://localhost:8000/api/snippets/${currentSnippet.id}/versions`);
+                if (!response.ok) {
+                    throw new Error('Error al cargar versiones');
+                }
+
+                const versions = await response.json();
+
+                if (versions.length === 0) {
+                    versionsList.innerHTML = '<p style="text-align: center; color: rgba(0, 0, 0, 0.5);">No hay versiones guardadas</p>';
+                    return;
+                }
+
+                versionsList.innerHTML = versions.map(version => {
+                    const date = new Date(version.created_at).toLocaleString();
+                    const reason = version.change_reason || 'Cambio manual';
+
+                    return `
+                        <div class="version-item">
+                            <div class="version-header">
+                                <span class="version-number">Versión ${version.version_number}</span>
+                                <span class="version-date">${date}</span>
+                            </div>
+                            <div class="version-name">${version.name}</div>
+                            <div class="version-reason">${reason}</div>
+                            <div class="version-actions">
+                                <button class="version-btn" onclick="previewVersion('${version.id}')">👁️ Vista Previa</button>
+                                <button class="version-btn restore" onclick="restoreVersion('${version.id}')">↩️ Restaurar</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error loading versions:', error);
+                versionsList.innerHTML = '<p style="text-align: center; color: rgba(255, 59, 48, 0.8);">Error al cargar versiones</p>';
+                showToast('Error al cargar el historial', 'error');
+            }
+        }
+
+        // Vista previa de una versión
+        function previewVersion(versionId) {
+            // TODO: Implementar vista previa de versión
+            showToast('Vista previa próximamente', 'info');
+        }
+
+        // Restaurar a una versión específica
+        async function restoreVersion(versionId) {
+            if (!confirm('¿Estás seguro de que quieres restaurar esta versión? Se guardará la versión actual como backup.')) {
+                return;
+            }
+
+            try {
+                showLoading('Restaurando versión...');
+
+                const response = await fetch(`http://localhost:8000/api/snippets/${currentSnippet.id}/versions/${versionId}/restore`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al restaurar versión');
+                }
+
+                const restoredSnippet = await response.json();
+
+                // Actualizar el snippet actual
+                currentSnippet = restoredSnippet;
+
+                // Recargar lista de snippets
+                await loadSnippets();
+
+                // Recargar el snippet editado
+                editSnippet(currentSnippet);
+
+                hideHistoryModal();
+                showToast(`✅ Restaurado a versión ${restoredSnippet.name}`, 'success');
+
+            } catch (error) {
+                console.error('Error restoring version:', error);
+                showToast('Error al restaurar versión', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
         function resetVoiceButton() {
             isListening = false;
             if (startVoiceBtn) {
@@ -2637,6 +3526,7 @@ Puedes usar variables:
         // Inicializar
         console.log('[Manager] Initializing app...');
         loadSnippets();
+        setupInfiniteScroll();
         console.log('[Manager] App initialized, snippets loading...');
         
         // Escuchar evento desde main process para crear nuevo snippet
