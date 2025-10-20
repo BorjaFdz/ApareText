@@ -68,6 +68,10 @@ all = [
     "aparetext[core,server,desktop,dev]",
 ]
 
+[project.scripts]
+aparetext-server = "server.main:main"
+aparetext-db = "scripts.db_maintenance:main"
+
 [build-system]
 requires = ["setuptools>=68.0.0", "wheel"]
 build-backend = "setuptools.build_meta"

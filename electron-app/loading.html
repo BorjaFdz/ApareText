@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApareText - Loading</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .loading-container {
+            text-align: center;
+            max-width: 500px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .message {
+            font-size: 18px;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            min-height: 24px;
+        }
+
+        .progress-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+
+        .logs-container {
+            width: 100%;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-line {
+            margin-bottom: 2px;
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: block; /* Asegurar que se muestre por defecto */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos para diferentes tipos de logs */
+        .log-line[data-type="error"] {
+            color: #e74c3c;
+        }
+
+        .log-line[data-type="info"] {
+            color: #3498db;
+        }
+
+        .log-line[data-type="success"] {
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-container">
+        <div class="logo">ApareText</div>
+        <div class="message" id="message">Iniciando ApareText...</div>
+        <div class="spinner"></div>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+        <div class="logs-container" id="logs"></div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        const messageEl = document.getElementById('message');
+        const progressFillEl = document.getElementById('progress-fill');
+        const logsEl = document.getElementById('logs');
+        const spinnerEl = document.querySelector('.spinner');
+
+        // Listen for updates from main process
+        ipcRenderer.on('loading-update', (event, data) => {
+            if (data.message) {
+                messageEl.textContent = data.message;
+            }
+            if (data.progress !== undefined) {
+                progressFillEl.style.width = data.progress + '%';
+                
+                // Ocultar spinner cuando llegue al 100%
+                if (data.progress >= 100) {
+                    spinnerEl.style.display = 'none';
+                } else {
+                    spinnerEl.style.display = 'block';
+                }
+            }
+        });
+
+        ipcRenderer.on('loading-log', (event, log) => {
+            const logLine = document.createElement('div');
+            logLine.className = 'log-line';
+
+            // Determinar el tipo de log basado en el prefijo
+            if (log.includes('[ERROR]')) {
+                logLine.setAttribute('data-type', 'error');
+            } else if (log.includes('[INFO]')) {
+                logLine.setAttribute('data-type', 'info');
+            } else {
+                logLine.setAttribute('data-type', 'info');
+            }
+
+            logLine.textContent = log;
+            logsEl.appendChild(logLine);
+            logsEl.scrollTop = logsEl.scrollHeight;
+
+            // Limitar el número de líneas para evitar que crezca demasiado
+            while (logsEl.children.length > 50) {
+                logsEl.removeChild(logsEl.firstChild);
+            }
+        });
+    </script>
+</body>
+</html>

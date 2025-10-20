@@ -10,9 +10,19 @@ const fs = require('fs').promises;
 const { spawn } = require('child_process');
 
 // Configuración
-const API_URL = 'http://127.0.0.1:46321';
+const API_HOST = '127.0.0.1';
+const API_PORT = 46321;
+const API_URL = `http://${API_HOST}:${API_PORT}`;
+
+// Constantes de UI
+const WINDOW_SIZES = {
+    MAIN: { width: 1200, height: 800 },
+    PALETTE: { width: 600, height: 550 },
+    LOADING: { width: 650, height: 450 }
+};
 let mainWindow = null;
 let paletteWindow = null;
+let loadingWindow = null;
 let tray = null;
 let isEnabled = true;
 let backendProcess = null;
@@ -51,12 +61,37 @@ function startBackendServer() {
     try {
         backendProcess = spawn(backendPath, [], {
             detached: false,
-            stdio: 'ignore', // Ignorar output para evitar problemas
+            stdio: ['ignore', 'pipe', 'pipe'], // Capturar stdout y stderr
             windowsHide: true // Ocultar ventana de consola en Windows
         });
+
+        // Capturar logs del backend
+        const encoding = process.platform === 'win32' ? 'cp1252' : 'utf8';
+        if (backendProcess.stdout) {
+            backendProcess.stdout.on('data', (data) => {
+                const log = data.toString(encoding);
+                console.log('[Backend]', log.trim());
+                if (loadingWindow && !loadingWindow.isDestroyed()) {
+                    loadingWindow.webContents.send('loading-log', `[INFO] ${log.trim()}`);
+                }
+            });
+        }
+
+        if (backendProcess.stderr) {
+            backendProcess.stderr.on('data', (data) => {
+                const log = data.toString(encoding);
+                console.error('[Backend]', log.trim());
+                if (loadingWindow && !loadingWindow.isDestroyed()) {
+                    loadingWindow.webContents.send('loading-log', `[ERROR] ${log.trim()}`);
+                }
+            });
+        }
         
         backendProcess.on('error', (err) => {
             console.error('[ApareText] Failed to start backend:', err);
+            if (loadingWindow && !loadingWindow.isDestroyed()) {
+                loadingWindow.webContents.send('loading-log', `[ERROR] Failed to start backend: ${err.message}`);
+            }
             dialog.showErrorBox(
                 'Backend Error',
                 `Failed to start backend server:\n${err.message}`
@@ -65,6 +100,9 @@ function startBackendServer() {
         
         backendProcess.on('exit', (code, signal) => {
             console.log(`[ApareText] Backend exited with code ${code}, signal ${signal}`);
+            if (loadingWindow && !loadingWindow.isDestroyed()) {
+                loadingWindow.webContents.send('loading-log', `[ERROR] Backend process exited unexpectedly (code: ${code}, signal: ${signal})`);
+            }
             backendProcess = null;
         });
         
@@ -125,7 +163,7 @@ function createAppIcon() {
  */
 function createPaletteWindow() {
     paletteWindow = new BrowserWindow({
-        width: 600,
+        width: WINDOW_SIZES.PALETTE.width,
         height: 550, // Aumentado más para mostrar TODO el contenido completo
         show: false,
         frame: false,
@@ -164,8 +202,8 @@ function createPaletteWindow() {
  */
 function createMainWindow() {
     mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
+        width: WINDOW_SIZES.MAIN.width,
+        height: WINDOW_SIZES.MAIN.height,
         minWidth: 800,
         minHeight: 600,
         show: true, // Mostrar inmediatamente
@@ -198,6 +236,34 @@ function createMainWindow() {
             event.preventDefault();
             mainWindow.hide();
         }
+    });
+}
+
+/**
+ * Crear ventana de carga
+ */
+function createLoadingWindow() {
+    loadingWindow = new BrowserWindow({
+        width: WINDOW_SIZES.LOADING.width,
+        height: WINDOW_SIZES.LOADING.height,
+        show: false,
+        frame: false,
+        transparent: false, // Cambiar a false para mejor compatibilidad en Windows
+        resizable: false,
+        alwaysOnTop: true,
+        backgroundColor: '#2c3e50', // Color de fondo sólido
+        icon: createAppIcon(),
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
+
+    loadingWindow.loadFile('loading.html');
+
+    loadingWindow.once('ready-to-show', () => {
+        loadingWindow.show();
+        loadingWindow.center(); // Centrar la ventana
     });
 }
 
@@ -360,27 +426,82 @@ async function copyImageToClipboard(base64Data) {
 }
 
 /**
+ * Verificar si el servidor API está disponible
+ */
+async function checkApiServer() {
+    try {
+        const response = await axios.get(`${API_URL}/`, { timeout: 2000 });
+        return response.status === 200;
+    } catch (error) {
+        console.log('[ApareText] API not ready yet:', error.message);
+        return false;
+    }
+}
+
+/**
  * Inicialización de la aplicación
  */
 app.whenReady().then(async () => {
     console.log('[ApareText] Starting...');
 
-    // Iniciar backend automáticamente en producción
-    startBackendServer();
-    
-    // Esperar 2 segundos para que el backend se inicie
-    if (!app.isPackaged) {
-        // En desarrollo, verificar que esté corriendo manualmente
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    } else {
-        // En producción, esperar a que el backend inicie
-        console.log('[ApareText] Waiting for backend to start...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+    // Crear ventana de carga
+    createLoadingWindow();
+
+    // Actualizar mensaje inicial
+    if (loadingWindow && !loadingWindow.isDestroyed()) {
+        loadingWindow.webContents.send('loading-update', {
+            message: 'Iniciando servidor backend...',
+            progress: 10
+        });
     }
 
-    // Verificar API
-    const apiAvailable = await checkApiServer();
+    // Iniciar backend automáticamente en producción
+    const backendStarted = startBackendServer();
+
+    // Esperar un poco para que el backend comience
+    await new Promise(resolve => setTimeout(resolve, backendStarted ? 1000 : 500));
+
+    if (loadingWindow && !loadingWindow.isDestroyed()) {
+        loadingWindow.webContents.send('loading-update', {
+            message: backendStarted ? 'Esperando que el servidor esté listo...' : 'Verificando servidor en modo desarrollo...',
+            progress: 30
+        });
+    }
+
+    // Verificar API con reintentos
+    let apiAvailable = false;
+    let attempts = 0;
+    const maxAttempts = 30; // 30 segundos máximo
+
+    console.log('[ApareText] Starting API check loop...');
+
+    while (!apiAvailable && attempts < maxAttempts) {
+        console.log(`[ApareText] API check attempt ${attempts + 1}/${maxAttempts}`);
+        apiAvailable = await checkApiServer();
+        console.log(`[ApareText] API available: ${apiAvailable}`);
+        
+        if (!apiAvailable) {
+            attempts++;
+            const progress = 30 + (attempts / maxAttempts) * 50; // 30% to 80%
+            if (loadingWindow && !loadingWindow.isDestroyed()) {
+                loadingWindow.webContents.send('loading-update', {
+                    message: `Esperando servidor... (${attempts}/${maxAttempts})`,
+                    progress: Math.min(progress, 80)
+                });
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
+
+    console.log(`[ApareText] API check completed. Available: ${apiAvailable}, Attempts: ${attempts}`);
+
     if (!apiAvailable) {
+        if (loadingWindow && !loadingWindow.isDestroyed()) {
+            loadingWindow.webContents.send('loading-update', {
+                message: 'Error: Servidor no disponible',
+                progress: 0
+            });
+        }
         const { dialog } = require('electron');
         const result = await dialog.showMessageBox({
             type: 'warning',
@@ -398,14 +519,27 @@ app.whenReady().then(async () => {
         }
     }
 
-    // Crear ventanas
+    // Servidor listo
+    if (loadingWindow && !loadingWindow.isDestroyed()) {
+        loadingWindow.webContents.send('loading-update', {
+            message: '¡Listo! Iniciando interfaz...',
+            progress: 100
+        });
+    }
+
+    // Esperar un momento para mostrar el 100% y que el usuario lo vea
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Crear ventanas principales
     createMainWindow();
     createPaletteWindow();
     createTray();
     registerHotkeys();
 
-    // NO abrir manager automáticamente, solo mostrar paleta cuando se presiona Ctrl+Space
-    // El manager se abre desde el menú del tray o con el atajo
+    // Ocultar ventana de carga
+    if (loadingWindow && !loadingWindow.isDestroyed()) {
+        loadingWindow.hide();
+    }
 
     console.log('[ApareText] Ready! Press Ctrl+Space to open palette');
 });

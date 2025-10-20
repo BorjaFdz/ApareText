@@ -34,8 +34,9 @@ class Database:
         self.engine = create_engine(f"sqlite:///{db_path}", echo=False)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
-        # Crear tablas si no existen
-        self._init_db()
+        # Defer heavy DB initialization (create_all / default inserts) until first session is requested.
+        # This reduces startup/import cost when the application is packaged.
+        self._initialized = False
 
     def _init_db(self) -> None:
         """Crear tablas en la base de datos."""
@@ -71,11 +72,19 @@ class Database:
 
     def get_session(self) -> Session:
         """Obtener nueva sesión de base de datos."""
+        # Ensure DB schema and defaults are created on first real use.
+        if not getattr(self, "_initialized", False):
+            try:
+                self._init_db()
+            finally:
+                # Even if _init_db raises, avoid retry storms; mark initialized to allow subsequent errors to surface normally
+                self._initialized = True
         return self.SessionLocal()
 
     def close(self) -> None:
         """Cerrar conexión a base de datos."""
         self.engine.dispose()
+        self._initialized = False
 
     def backup(self, backup_path: str) -> None:
         """
@@ -111,6 +120,8 @@ class Database:
         # Reconectar
         self.engine = create_engine(f"sqlite:///{self.db_path}", echo=False)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+        # Reset initialized flag so schema/defaults will be ensured on next use
+        self._initialized = False
 
     def export_to_json(self, output_path: str) -> None:
         """

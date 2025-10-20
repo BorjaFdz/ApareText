@@ -150,30 +150,25 @@ class TemplateParser:
 
         return self.FUNCTION_PATTERN.sub(replace_function, template)
 
-    def _process_date_function(self, format_arg: Optional[str]) -> str:
-        """Procesar función {{date:format}}."""
+    def _process_datetime_function(self, func_name: str, format_arg: Optional[str], default_format: str) -> str:
+        """Procesar funciones de fecha/hora {{date:format}} o {{time:format}}."""
         if format_arg:
-            # Remover ':' inicial
-            date_format = format_arg.lstrip(":")
+            dt_format = format_arg.lstrip(":")
         else:
-            date_format = "%Y-%m-%d"  # Formato por defecto
+            dt_format = default_format
 
         try:
-            return datetime.now().strftime(date_format)
+            return datetime.now().strftime(dt_format)
         except ValueError:
-            return f"{{{{date{format_arg or ''}}}}}"  # Formato inválido, devolver original
+            return f"{{{{{func_name}{format_arg or ''}}}}}"  # Formato inválido, devolver original
+
+    def _process_date_function(self, format_arg: Optional[str]) -> str:
+        """Procesar función {{date:format}}."""
+        return self._process_datetime_function("date", format_arg, "%Y-%m-%d")
 
     def _process_time_function(self, format_arg: Optional[str]) -> str:
         """Procesar función {{time:format}}."""
-        if format_arg:
-            time_format = format_arg.lstrip(":")
-        else:
-            time_format = "%H:%M:%S"  # Formato por defecto
-
-        try:
-            return datetime.now().strftime(time_format)
-        except ValueError:
-            return f"{{{{time{format_arg or ''}}}}}"
+        return self._process_datetime_function("time", format_arg, "%H:%M:%S")
 
     def _process_clipboard_function(self) -> str:
         """Procesar función {{clipboard}}."""

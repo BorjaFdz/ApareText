@@ -1,22 +1,13 @@
-# ApareText 🚀# ApareText 🚀
+# ApareText 🚀
 
+**Text expander ultrarrápido con paleta global y snippets de imágenes**
 
+ApareText es una herramienta de productividad que te permite escribir más rápido mediante snippets reutilizables con variables, formateo rico y copiar imágenes al instante.
 
-**Text expander ultrarrápido con paleta global y snippets de imágenes****Text expander ultrarrápido con paleta global y snippets de imágenes**
+## 🎯 Características principales
 
-
-
-ApareText es una herramienta de productividad que te permite escribir más rápido mediante snippets reutilizables con variables, formateo rico y copiar imágenes al instante.ApareText es una herramienta de productividad que te permite escribir más rápido mediante snippets reutilizables con variables, formateo rico y copiar imágenes al instante.
-
-
-
-## 🎯 Características principales## 🎯 Características principales
-
-
-
-- ⚡ **Paleta Global**: `Ctrl+Space` para acceder a tus snippets desde cualquier aplicación- ⚡ **Paleta Global**: `Ctrl+Space` para acceder a tus snippets desde cualquier aplicación
-
-- 🔤 **Expansión inteligente**: Escribe `;firma` y presiona Enter para expandir automáticamente- 🔤 **Expansión inteligente**: Escribe `;firma` y presiona Enter para expandir automáticamente
+- ⚡ **Paleta Global**: `Ctrl+Space` para acceder a tus snippets desde cualquier aplicación
+- 🔤 **Expansión inteligente**: Escribe `;firma` y presiona Enter para expandir automáticamente
 
 - 🖼️ **Snippets de imágenes**: Guarda y pega imágenes completas con un solo atajo- 🖼️ **Snippets de imágenes**: Guarda y pega imágenes completas con un solo atajo
 

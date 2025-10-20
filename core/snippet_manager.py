@@ -9,7 +9,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from core.database import Database
-from core.models import Snippet, SnippetDB, SnippetVariable, SnippetVariableDB, UsageLog, UsageLogDB
+from core.models import Snippet, SnippetDB, SnippetVariable, SnippetVariableDB, UsageLogDB
 
 
 class SnippetManager:
@@ -23,6 +23,16 @@ class SnippetManager:
             db: Instancia de Database
         """
         self.db = db
+
+    @staticmethod
+    def _tags_to_string(tags: list[str]) -> Optional[str]:
+        """Convertir lista de tags a string separado por comas."""
+        return ",".join(tags) if tags else None
+
+    @staticmethod
+    def _string_to_tags(tags_str: Optional[str]) -> list[str]:
+        """Convertir string de tags separado por comas a lista."""
+        return [tag.strip() for tag in tags_str.split(",")] if tags_str else []
 
     def create_snippet(self, snippet: Snippet) -> Snippet:
         """
@@ -39,7 +49,7 @@ class SnippetManager:
                 id=snippet.id,
                 name=snippet.name,
                 abbreviation=snippet.abbreviation,
-                tags=",".join(snippet.tags) if snippet.tags else None,
+                tags=self._tags_to_string(snippet.tags),
                 content_text=snippet.content_text,
                 content_html=snippet.content_html,
                 is_rich=snippet.is_rich,
@@ -127,7 +137,7 @@ class SnippetManager:
             # Actualizar campos
             snippet_db.name = snippet.name
             snippet_db.abbreviation = snippet.abbreviation
-            snippet_db.tags = ",".join(snippet.tags) if snippet.tags else None
+            snippet_db.tags = self._tags_to_string(snippet.tags)
             snippet_db.content_text = snippet.content_text
             snippet_db.content_html = snippet.content_html
             snippet_db.is_rich = snippet.is_rich
@@ -366,7 +376,7 @@ class SnippetManager:
             id=snippet_db.id,
             name=snippet_db.name,
             abbreviation=snippet_db.abbreviation,
-            tags=snippet_db.tags.split(",") if snippet_db.tags else [],
+            tags=self._string_to_tags(snippet_db.tags),
             content_text=snippet_db.content_text,
             content_html=snippet_db.content_html,
             is_rich=snippet_db.is_rich,

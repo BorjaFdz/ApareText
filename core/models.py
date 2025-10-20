@@ -184,20 +184,62 @@ class Snippet(BaseModel):
             return [tag.strip() for tag in v.split(",") if tag.strip()]
         return v or []
 
-    @field_validator("scope_values", mode="before")
+    @field_validator("regex")
     @classmethod
-    def parse_scope_values(cls, v: Any) -> list[str]:
-        """Parsear scope_values desde JSON string o lista."""
-        if isinstance(v, str):
-            import json
+    def validate_regex(cls, v: Optional[str]) -> Optional[str]:
+        """Validar que el patrón regex sea válido."""
+        if v:
             try:
-                return json.loads(v)
-            except json.JSONDecodeError:
-                return []
-        return v or []
+                import re
+                re.compile(v)
+            except re.error:
+                raise ValueError(f"Invalid regex pattern: {v}")
+        return v
+
+    @field_validator("image_data")
+    @classmethod
+    def validate_image_data(cls, v: Optional[str], info: Any) -> Optional[str]:
+        """Validar datos de imagen base64."""
+        if v and info.data.get("snippet_type") == SnippetType.IMAGE:
+            if not v.startswith("data:image/"):
+                raise ValueError("Image data must be valid base64 data URL")
+        return v
+
+    @field_validator("content_text", "content_html")
+    @classmethod
+    def validate_content(cls, v: Optional[str], info: Any) -> Optional[str]:
+        """Validar que haya contenido cuando sea requerido."""
+        if info.data.get("snippet_type") == SnippetType.TEXT and not v:
+            # Para snippets de texto, al menos uno de content_text o content_html debe existir
+            other_content = info.data.get("content_html" if info.field_name == "content_text" else "content_text")
+            if not other_content:
+                raise ValueError("Text snippets must have either content_text or content_html")
+        return v
+
+    @field_validator("scope_values")
+    @classmethod
+    def validate_scope_values(cls, v: list[str], info: Any) -> list[str]:
+        """Validar valores de scope según el tipo."""
+        scope_type = info.data.get("scope_type")
+        if scope_type == ScopeType.APPS:
+            # Validar que sean nombres de aplicaciones válidos
+            for app in v:
+                if not app or len(app.strip()) == 0:
+                    raise ValueError("App names cannot be empty")
+        elif scope_type == ScopeType.DOMAINS:
+            # Validar formato de dominio básico
+            import re
+            domain_pattern = re.compile(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$')
+            for domain in v:
+                if not domain_pattern.match(domain):
+                    raise ValueError(f"Invalid domain format: {domain}")
+        return v
 
     class Config:
         from_attributes = True
+
+    def __str__(self):
+        return f"Snippet(id={self.id}, name='{self.name}', abbr='{self.abbreviation}')"
 
 
 class Settings(BaseModel):

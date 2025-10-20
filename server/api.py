@@ -10,10 +10,60 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from core.database import Database, get_db
-from core.models import Snippet, SnippetVariable, SnippetDB, SnippetVariableDB
-from core.snippet_manager import SnippetManager
-from core.template_parser import TemplateParser
+from config import CORS_ORIGINS
+
+# NOTE: avoid importing heavy core modules (SQLAlchemy, Pydantic models) at module import time.
+# Import them lazily in handlers to reduce startup/import overhead of the frozen binary.
+
+
+# Lightweight API Pydantic models (used for request/response typing in handlers)
+class APISnippetVariable(BaseModel):
+    id: str | None = None
+    snippet_id: str | None = None
+    key: str
+    label: str | None = None
+    type: str = "text"
+    placeholder: str | None = None
+    default_value: str | None = None
+    required: bool = False
+    regex: str | None = None
+    options: list[str] | None = None
+
+
+class APISnippet(BaseModel):
+    id: str | None = None
+    name: str
+    abbreviation: str | None = None
+    snippet_type: str = "text"
+    tags: list[str] = []
+    content_text: str | None = None
+    content_html: str | None = None
+    is_rich: bool = False
+    image_data: str | None = None
+    scope_type: str = "global"
+    scope_values: list[str] = []
+    caret_marker: str = "{{|}}"
+    variables: list[APISnippetVariable] = []
+    usage_count: int = 0
+    enabled: bool = True
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+def get_snippet_manager():
+    """Lazy import of SnippetManager and Database to avoid import-time DB initialization."""
+    from core.database import get_db
+    from core.snippet_manager import SnippetManager
+
+    db = get_db()
+    return SnippetManager(db)
+
+
+def get_parser():
+    """Lazy import of TemplateParser."""
+    from core.template_parser import TemplateParser
+
+    return TemplateParser()
 
 # Crear app
 app = FastAPI(
@@ -25,9 +75,7 @@ app = FastAPI(
 # CORS - permitir solo localhost
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:46321",
-        "http://127.0.0.1:46321",
+    allow_origins=CORS_ORIGINS + [
         "chrome-extension://*",
         "moz-extension://*",
     ],
@@ -38,15 +86,8 @@ app.add_middleware(
 
 
 # Dependencias
-def get_snippet_manager() -> SnippetManager:
-    """Obtener instancia de SnippetManager."""
-    db = get_db()
-    return SnippetManager(db)
-
-
-def get_parser() -> TemplateParser:
-    """Obtener instancia de TemplateParser."""
-    return TemplateParser()
+# Use the lazy helpers defined earlier (`get_snippet_manager` and `get_parser`) to avoid
+# importing heavy modules at import time. The lightweight variants are defined above.
 
 
 # Modelos de request/response
@@ -63,7 +104,7 @@ class SnippetCreate(BaseModel):
     image_data: Optional[str] = None  # Base64 image data para snippets tipo IMAGE
     scope_type: str = "global"
     scope_values: list[str] = []
-    variables: list[SnippetVariable] = []
+    variables: list[APISnippetVariable] = []
 
 
 class SnippetUpdate(BaseModel):
@@ -79,7 +120,7 @@ class SnippetUpdate(BaseModel):
     image_data: Optional[str] = None  # Base64 image data para snippets tipo IMAGE
     scope_type: Optional[str] = None
     scope_values: Optional[list[str]] = None
-    variables: Optional[list[SnippetVariable]] = None
+    variables: Optional[list[APISnippetVariable]] = None
     enabled: Optional[bool] = None
 
 
@@ -111,8 +152,8 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check detallado."""
-    db = get_db()
-    manager = SnippetManager(db)
+    # Lazy: avoid importing core modules at import-time
+    manager = get_snippet_manager()
     snippets = manager.get_all_snippets()
 
     return {
@@ -123,7 +164,7 @@ async def health():
 
 
 # CRUD Snippets
-@app.get("/api/snippets", response_model=list[Snippet])
+@app.get("/api/snippets", response_model=list[APISnippet])
 async def list_snippets(
     enabled_only: bool = Query(False, description="Filtrar solo snippets habilitados"),
     tags: Optional[str] = Query(None, description="Filtrar por tags (CSV)"),
@@ -140,7 +181,7 @@ async def list_snippets(
     return snippets
 
 
-@app.get("/api/snippets/{snippet_id}", response_model=Snippet)
+@app.get("/api/snippets/{snippet_id}", response_model=APISnippet)
 async def get_snippet(snippet_id: str):
     """Obtener snippet por ID."""
     manager = get_snippet_manager()
@@ -152,13 +193,24 @@ async def get_snippet(snippet_id: str):
     return snippet
 
 
-@app.post("/api/snippets", response_model=Snippet, status_code=201)
+@app.post("/api/snippets", response_model=APISnippet, status_code=201)
 async def create_snippet(snippet_data: SnippetCreate):
     """Crear nuevo snippet."""
     manager = get_snippet_manager()
 
-    # Crear snippet desde request
-    snippet = Snippet(
+    # Lazily import core Pydantic Snippet model and convert
+    from core.models import Snippet as CoreSnippet, SnippetVariable as CoreSnippetVariable
+
+    # Convert variables
+    core_vars = []
+    for v in (snippet_data.variables or []):
+        if isinstance(v, dict):
+            core_vars.append(CoreSnippetVariable(**v))
+        else:
+            # APISnippetVariable is a BaseModel; convert via dict
+            core_vars.append(CoreSnippetVariable(**v.model_dump()))
+
+    core_snippet = CoreSnippet(
         name=snippet_data.name,
         abbreviation=snippet_data.abbreviation,
         snippet_type=snippet_data.snippet_type,
@@ -169,14 +221,15 @@ async def create_snippet(snippet_data: SnippetCreate):
         image_data=snippet_data.image_data,
         scope_type=snippet_data.scope_type,
         scope_values=snippet_data.scope_values,
-        variables=snippet_data.variables,
+        variables=core_vars,
     )
 
-    created = manager.create_snippet(snippet)
-    return created
+    created = manager.create_snippet(core_snippet)
+    # Return as APISnippet for consistent API schema
+    return APISnippet(**created.model_dump())
 
 
-@app.put("/api/snippets/{snippet_id}", response_model=Snippet)
+@app.put("/api/snippets/{snippet_id}", response_model=APISnippet)
 async def update_snippet(snippet_id: str, snippet_data: SnippetUpdate):
     """Actualizar snippet existente."""
     manager = get_snippet_manager()
@@ -199,7 +252,7 @@ async def update_snippet(snippet_id: str, snippet_data: SnippetUpdate):
             # Si es variables, asegurarse de que sean SnippetVariable objects
             elif key == "variables" and isinstance(value, list):
                 from core.models import SnippetVariable
-                value = [SnippetVariable(**v) if isinstance(v, dict) else v for v in value]
+                value = [SnippetVariable(**v) if isinstance(v, dict) else SnippetVariable(**v.model_dump()) for v in value]
             
             setattr(existing, key, value)
 
@@ -207,7 +260,7 @@ async def update_snippet(snippet_id: str, snippet_data: SnippetUpdate):
     existing.updated_at = datetime.utcnow()
     
     updated = manager.update_snippet(snippet_id, existing)
-    return updated
+    return APISnippet(**updated.model_dump())
 
 
 @app.delete("/api/snippets/{snippet_id}", status_code=204)
@@ -223,7 +276,7 @@ async def delete_snippet(snippet_id: str):
 
 
 # Búsqueda
-@app.get("/api/snippets/search/{query}", response_model=list[Snippet])
+@app.get("/api/snippets/search/{query}", response_model=list[APISnippet])
 async def search_snippets(
     query: str,
     tags: Optional[str] = Query(None, description="Filtrar por tags (CSV)"),
@@ -280,8 +333,31 @@ async def expand_snippet(expand_data: SnippetExpand):
     )
 
 
+# Serve bundled openapi.json as a fast, deterministic fallback to avoid runtime generation.
+@app.get("/openapi-bundled")
+async def openapi_bundled():
+    """Return the bundled openapi.json file if present."""
+    import json
+    import os
+    from pathlib import Path
+
+    base = getattr(__import__('sys'), '_MEIPASS', None) or os.path.dirname(__file__)
+    candidates = [
+        Path(base) / 'openapi.json',
+        Path(base) / 'server' / 'openapi.json',
+        Path(base) / '_internal' / 'server' / 'openapi.json',
+    ]
+
+    for c in candidates:
+        if c.exists():
+            with c.open('r', encoding='utf-8') as f:
+                return JSONResponse(content=json.load(f))
+
+    return JSONResponse(content={"error": "bundled openapi.json not found"}, status_code=404)
+
+
 # Abreviaturas
-@app.get("/api/abbreviations/{abbreviation}", response_model=Optional[Snippet])
+@app.get("/api/abbreviations/{abbreviation}", response_model=Optional[APISnippet])
 async def get_by_abbreviation(abbreviation: str):
     """Obtener snippet por abreviatura."""
     manager = get_snippet_manager()
@@ -309,6 +385,9 @@ async def export_snippets():
     import tempfile
     from fastapi.responses import FileResponse
 
+    # Lazy import DB to avoid heavy initialization at module import
+    from core.database import get_db
+
     db = get_db()
 
     # Crear archivo temporal
@@ -332,70 +411,69 @@ async def import_snippets(
 ):
     """Importar snippets desde JSON."""
     try:
+        from core.database import get_db
+        from core.models import SnippetDB, SnippetVariableDB
+
         db = get_db()
-        session = db.get_session()
-        
-        # Validar formato
-        if 'snippets' not in data:
-            raise HTTPException(status_code=400, detail="Invalid format: missing 'snippets' key")
-        
-        imported_count = 0
-        skipped_count = 0
-        
-        for snippet_data in data['snippets']:
-            try:
-                # Si replace=True, eliminar snippets con el mismo abbreviation
-                if replace and snippet_data.get('abbreviation'):
-                    existing = session.query(SnippetDB).filter(
-                        SnippetDB.abbreviation == snippet_data['abbreviation']
-                    ).first()
-                    if existing:
-                        session.delete(existing)
-                        session.commit()
-                
-                # Crear snippet (sin incluir id para que se genere uno nuevo)
-                snippet_data_clean = {k: v for k, v in snippet_data.items() if k != 'id'}
-                
-                # Extraer variables si existen
-                variables = snippet_data_clean.pop('variables', [])
-                
-                # Convertir fechas de string a datetime
-                if 'created_at' in snippet_data_clean and isinstance(snippet_data_clean['created_at'], str):
-                    snippet_data_clean['created_at'] = datetime.fromisoformat(snippet_data_clean['created_at'].replace('Z', '+00:00'))
-                if 'updated_at' in snippet_data_clean and isinstance(snippet_data_clean['updated_at'], str):
-                    snippet_data_clean['updated_at'] = datetime.fromisoformat(snippet_data_clean['updated_at'].replace('Z', '+00:00'))
-                
-                # Crear snippet
-                snippet = SnippetDB(**snippet_data_clean)
-                session.add(snippet)
-                session.flush()  # Para obtener el ID
-                
-                # Crear variables asociadas
-                for var_data in variables:
-                    var_data_clean = {k: v for k, v in var_data.items() if k != 'id'}
-                    var_data_clean['snippet_id'] = snippet.id
-                    variable = SnippetVariableDB(**var_data_clean)
-                    session.add(variable)
-                
-                imported_count += 1
-                
-            except Exception as e:
-                print(f"[ApareText] Error importing snippet: {e}")
-                skipped_count += 1
-                session.rollback()  # Rollback en caso de error
-                continue
-        
-        session.commit()
-        session.close()
-        
+        with db.get_session() as session:
+            # Validar formato
+            if 'snippets' not in data:
+                raise HTTPException(status_code=400, detail="Invalid format: missing 'snippets' key")
+
+            imported_count = 0
+            skipped_count = 0
+
+            for snippet_data in data['snippets']:
+                try:
+                    # Si replace=True, eliminar snippets con el mismo abbreviation
+                    if replace and snippet_data.get('abbreviation'):
+                        existing = session.query(SnippetDB).filter(
+                            SnippetDB.abbreviation == snippet_data['abbreviation']
+                        ).first()
+                        if existing:
+                            session.delete(existing)
+                            session.commit()
+
+                    # Crear snippet (sin incluir id para que se genere uno nuevo)
+                    snippet_data_clean = {k: v for k, v in snippet_data.items() if k != 'id'}
+
+                    # Extraer variables si existen
+                    variables = snippet_data_clean.pop('variables', [])
+
+                    # Convertir fechas de string a datetime
+                    if 'created_at' in snippet_data_clean and isinstance(snippet_data_clean['created_at'], str):
+                        snippet_data_clean['created_at'] = datetime.fromisoformat(snippet_data_clean['created_at'].replace('Z', '+00:00'))
+                    if 'updated_at' in snippet_data_clean and isinstance(snippet_data_clean['updated_at'], str):
+                        snippet_data_clean['updated_at'] = datetime.fromisoformat(snippet_data_clean['updated_at'].replace('Z', '+00:00'))
+
+                    # Crear snippet
+                    snippet = SnippetDB(**snippet_data_clean)
+                    session.add(snippet)
+                    session.flush()  # Para obtener el ID
+
+                    # Crear variables asociadas
+                    for var_data in variables:
+                        var_data_clean = {k: v for k, v in var_data.items() if k != 'id'}
+                        var_data_clean['snippet_id'] = snippet.id
+                        variable = SnippetVariableDB(**var_data_clean)
+                        session.add(variable)
+
+                    imported_count += 1
+
+                except Exception as e:
+                    print(f"[ApareText] Error importing snippet: {e}")
+                    skipped_count += 1
+                    session.rollback()  # Rollback en caso de error
+                    continue
+
+            session.commit()
+
         return {
             "success": True,
             "imported": imported_count,
             "skipped": skipped_count,
             "message": f"Importados {imported_count} snippets ({skipped_count} omitidos)"
-        }
-        
-    except Exception as e:
+        }    except Exception as e:
         print(f"[ApareText] Error in import: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
