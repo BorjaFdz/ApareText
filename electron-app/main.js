@@ -66,7 +66,7 @@ function startBackendServer() {
         });
 
         // Capturar logs del backend
-        const encoding = process.platform === 'win32' ? 'cp1252' : 'utf8';
+        const encoding = 'utf8'; // Usar UTF-8 en lugar de cp1252 que ya no es soportado
         if (backendProcess.stdout) {
             backendProcess.stdout.on('data', (data) => {
                 const log = data.toString(encoding);

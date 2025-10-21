@@ -143,6 +143,18 @@ class SnippetVariable(BaseModel):
             raise ValueError("options is required when type is 'select'")
         return v
 
+    @field_validator("regex")
+    @classmethod
+    def validate_regex(cls, v: Optional[str]) -> Optional[str]:
+        """Validar que el patrón regex sea válido."""
+        if v:
+            try:
+                import re
+                re.compile(v)
+            except re.error:
+                raise ValueError(f"Invalid regex pattern: {v}")
+        return v
+
     class Config:
         from_attributes = True
 
@@ -183,18 +195,6 @@ class Snippet(BaseModel):
         if isinstance(v, str):
             return [tag.strip() for tag in v.split(",") if tag.strip()]
         return v or []
-
-    @field_validator("regex")
-    @classmethod
-    def validate_regex(cls, v: Optional[str]) -> Optional[str]:
-        """Validar que el patrón regex sea válido."""
-        if v:
-            try:
-                import re
-                re.compile(v)
-            except re.error:
-                raise ValueError(f"Invalid regex pattern: {v}")
-        return v
 
     @field_validator("image_data")
     @classmethod

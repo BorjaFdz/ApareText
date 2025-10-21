@@ -1,10 +1,81 @@
-# 📦 Instrucciones de Compilación - ApareText
+# 🏗️ ApareText Build Instructions
+
+## 📋 Build Process Rules
+
+### 1. Build Location
+- **ALWAYS build on OneDrive Desktop** in the same location: `C:\Users\[USER]\OneDrive\Escritorio\ApareText-Build`
+- **NEVER build inside the repository** to avoid accumulating build artifacts
+- **Repository contains source code only** - build directory contains compiled artifacts
+
+### 2. Cleanup Before Build
+- **ALWAYS delete everything** in the build directory except the database file (`aparetext.db`)
+- **PRESERVE the database** (`aparetext.db`) between builds for data continuity
+- **OVERWRITE all other files** without mercy
+
+### 3. Build Directory Structure
+```
+Desktop/
+└── ApareText-Build/
+    ├── aparetext.db          # ← PRESERVE THIS FILE
+    ├── Installers/           # ← INSTALLERS HERE
+    │   ├── ApareText-Setup-*.exe
+    │   └── ApareText-*.exe
+    └── ApareText/            # ← Generated app directory
+        └── ...
+```
+```
+OneDrive/Escritorio/
+└── ApareText-Build/           # ← Build artifacts only
+    ├── aparetext.db           # ← PRESERVE THIS FILE
+    ├── ApareText-Setup-*.exe  # ← Generated installer
+    └── ApareText/             # ← Generated app directory
+        └── ...
+
+Repositorio (_Repostitorios/ApareText/) # ← Source code only
+├── core/                      # ← Python backend
+├── electron-app/              # ← Electron frontend
+├── scripts/                   # ← Build scripts
+└── docs/                      # ← Documentation
+```
+
+### 4. Build Commands
+```bash
+# 1. Clean build directory (preserve database)
+# 2. Copy only necessary source code and dependencies to build location
+# 3. Run build process with aggressive cleanup
+# 4. Deploy generated files
+```
+
+### 5. Build Optimizations
+
+- **Space monitoring**: Checks available disk space before build
+- **Selective copying**: Excludes `.git`, `node_modules`, `__pycache__`, logs, etc.
+- **Smart copying**: Only copies source code and required dependencies
+- **Aggressive cleanup**: Removes build artifacts, caches, and temp files
+- **Size reporting**: Shows space saved after cleanup
+- **Database preservation**: Maintains user data between builds
+
+### 6. Repository Maintenance
+
+- Keep repository clean - no build artifacts
+- Use `.gitignore` to exclude build files
+- Only commit source code and documentation
+
+## ⚠️ Critical Reminders
+
+- **Repository vs Build separation**: Repository contains source code only, build directory contains compiled artifacts
+- **OneDrive build location**: Always build in `C:\Users\[USER]\OneDrive\Escritorio\ApareText-Build`
+- **Database preservation**: `aparetext.db` is preserved between builds for user data continuity
+- **Clean repository**: Never commit build artifacts - keep repository lean
+- **Smart copying**: Only necessary source files are copied to build directory
+
+---
 
 ## ✅ Estado Actual
 
 ApareText **YA ESTÁ LISTO** para ser empaquetado como instalador Windows standalone.
 
-### Cambios Implementados (Octubre 8, 2025)
+### Cambios Implementados (Octubre 21, 2025)
 
 1. ✅ **Backend empaquetado con PyInstaller**
    - Archivo: `dist/ApareText-Server.exe`
@@ -27,6 +98,11 @@ ApareText **YA ESTÁ LISTO** para ser empaquetado como instalador Windows standa
    - Verificaciones automáticas de errores
    - Reporte detallado de archivos generados
 
+5. ✅ **Importación de snippets desde JSON**
+   - Endpoint `/api/import` implementado
+   - Soporte para categorías/tags
+   - Compatible con backups exportados
+
 ---
 
 ## 🚀 Compilar Instalador
@@ -46,7 +122,17 @@ Este script:
 
 **Tiempo estimado**: 5-8 minutos
 
-### Método 2: Manual Paso a Paso
+### Limpieza del Repositorio
+
+Antes de hacer commit, ejecuta el script de limpieza:
+
+```powershell
+.\scripts\cleanup.ps1
+```
+
+Este script elimina automáticamente todos los artifacts de build que puedan haberse acumulado.
+
+**Nota:** Si el script no puede eliminar algunos directorios (archivos bloqueados), cierra todas las instancias de ApareText y reinicia tu computadora.
 
 ```powershell
 # 1. Compilar backend

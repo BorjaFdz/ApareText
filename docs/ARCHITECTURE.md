@@ -1,7 +1,7 @@
 # Arquitectura Técnica - ApareText
 
 **Versión:** 1.0.0  
-**Última actualización:** Octubre 2025
+**Última actualización:** Octubre 21, 2025
 
 ---
 
@@ -784,3 +784,56 @@ Esta arquitectura proporciona:
 - Añadir scopes por app/dominio
 - Implementar variables en formulario
 - Tests E2E en apps reales
+
+---
+
+## Build y Deployment
+
+### Estrategia de Build
+
+**Reglas críticas implementadas (Octubre 2025):**
+
+1. **Build Location:** Siempre en `~/Desktop/ApareText-Build`
+   - Evita acumulación de artifacts en repositorio
+   - Mantiene repo limpio para desarrollo
+
+2. **Database Preservation:**
+   - `aparetext.db` se preserva entre builds
+   - Asegura continuidad de datos de usuario
+   - Backup automático durante rebuild
+
+3. **Cleanup Automático:**
+   - Eliminación de directorios antiguos (`build/`, `dist/`, `output/`)
+   - Prevención de crecimiento indefinido del build
+   - Solo archivos finales se mantienen
+
+### Proceso de Build
+
+```bash
+# Script automatizado: scripts/build.ps1
+1. Copiar repo → Desktop/ApareText-Build
+2. Preservar DB si existe
+3. Limpiar artifacts antiguos
+4. Compilar backend (PyInstaller)
+5. Compilar frontend (Electron)
+6. Limpiar archivos temporales
+7. Generar instalador .exe
+```
+
+### Estructura Post-Build
+
+```text
+Desktop/ApareText-Build/
+├── aparetext.db              # ← PRESERVED
+├── ApareText-Setup-*.exe    # ← INSTALLER
+├── ApareText/               # ← PORTABLE VERSION
+└── [source code]            # ← FOR DEBUGGING ONLY
+```
+
+### Problema Resuelto
+
+**Antes:** Build size crecía indefinidamente (~500MB+ por build)
+**Después:** Build size consistente (~50-100MB), repo limpio
+
+**Causa:** Directorios `output/`, `dist/`, `build/` se acumulaban
+**Solución:** Build en desktop + cleanup automático

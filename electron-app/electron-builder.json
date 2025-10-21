@@ -2,7 +2,7 @@
   "appId": "com.aparetext.desktop",
   "productName": "ApareText",
   "directories": {
-    "output": "dist",
+    "output": "output",
     "buildResources": "build",
     "app": "."
   },
@@ -16,11 +16,11 @@
     "!*.md",
     "!package-lock.json"
   ],
-  "asar": false,
+  "asar": true,
   "beforeBuild": "scripts/before-build.js",
   "extraResources": [
     {
-      "from": "../dist/ApareText-Server.exe",
+      "from": "../dist/ApareText-Server-v2.exe",
       "to": "ApareText-Server.exe"
     }
   ],

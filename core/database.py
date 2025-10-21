@@ -184,7 +184,7 @@ class Database:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(export_data, f, indent=2, ensure_ascii=False)
 
-    def import_from_json(self, input_path: str, replace: bool = False) -> int:
+    def import_from_json(self, input_path: str, replace: bool = False) -> dict:
         """
         Importar snippets desde JSON.
 
@@ -193,7 +193,7 @@ class Database:
             replace: Si True, elimina todos los snippets existentes antes de importar
 
         Returns:
-            Número de snippets importados
+            Dict con 'imported' y 'skipped' counts
         """
         with open(input_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -206,11 +206,13 @@ class Database:
                 session.query(SnippetDB).delete()
                 session.commit()
 
-            count = 0
+            imported = 0
+            skipped = 0
             for snippet_data in data["snippets"]:
                 # Verificar si existe por ID
                 existing = session.query(SnippetDB).filter_by(id=snippet_data["id"]).first()
                 if existing:
+                    skipped += 1
                     continue  # Skip duplicados
 
                 # Crear snippet
@@ -248,11 +250,11 @@ class Database:
                     )
                     session.add(var_db)
 
-                count += 1
+                imported += 1
 
             session.commit()
 
-        return count
+        return {"imported": imported, "skipped": skipped}
 
 
 # Singleton para acceso global

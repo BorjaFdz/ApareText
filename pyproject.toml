@@ -3,7 +3,7 @@ name = "aparetext"
 version = "0.1.0"
 description = "Text expander with global overlay, abbreviation expansion, and browser integration"
 authors = [
-    {name = "BorjaFdz", email = ""}
+    {name = "BorjaFdz"}
 ]
 readme = "README.md"
 requires-python = ">=3.10"

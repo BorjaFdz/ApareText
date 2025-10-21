@@ -26,9 +26,6 @@ CORS_ORIGINS = [
     f"http://{HOST}:{PORT}",  # API local
     "app://.",  # Electron app
     "file://",  # Desarrollo local con archivos
-    "chrome-extension://*",  # Extensiones de Chrome
-    "moz-extension://*",  # Extensiones de Firefox
-    "safari-extension://*",  # Extensiones de Safari
 ]
 
 

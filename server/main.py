@@ -18,11 +18,9 @@ if str(server_dir) not in sys.path:
     sys.path.insert(0, str(server_dir))
 
 import uvicorn
-from fastapi import WebSocket, WebSocketDisconnect
 
-from api import app
-from websocket import ws_manager
-from config import HOST, PORT, API_BASE_URL, WEBSOCKET_URL, DOCS_URL
+from server.api import app
+from server.config import HOST, PORT, API_BASE_URL, DOCS_URL
 
 import time
 import json
@@ -31,31 +29,7 @@ import threading
 import socket
 
 
-# Endpoint WebSocket
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    """
-    Endpoint WebSocket para comunicación con extensión.
-    """
-    await ws_manager.connect(websocket)
 
-    try:
-        while True:
-            # Recibir mensaje
-            data = await websocket.receive_json()
-
-            # Procesar mensaje
-            response = await ws_manager.handle_message(websocket, data)
-
-            # Enviar respuesta si existe
-            if response:
-                await ws_manager.send_personal_message(response, websocket)
-
-    except WebSocketDisconnect:
-        await ws_manager.disconnect(websocket)
-    except Exception as e:
-        print(f"WebSocket error: {e}")
-        await ws_manager.disconnect(websocket)
 
 
 def main():
@@ -78,8 +52,7 @@ def main():
     if not is_frozen:
         print(f"🚀 Starting ApareText Server...")
         print(f"📡 API: {API_BASE_URL}")
-        print(f"🔌 WebSocket: {WEBSOCKET_URL}")
-        print(f"📚 Docs: {DOCS_URL}")
+        print(f" Docs: {DOCS_URL}")
         print("\nPress CTRL+C to stop\n")
 
     # If a pre-generated OpenAPI JSON exists, use it to avoid expensive runtime generation.
@@ -146,13 +119,7 @@ def main():
     print(f"[startup] after _load_prebuilt_openapi: {t_after_openapi} (loaded={loaded})", file=sys.stderr)
 
     # Register a FastAPI startup event to measure when the ASGI app runs its startup handlers
-    try:
-        @app.on_event("startup")
-        async def _app_startup_event():
-            print(f"[uvicorn] app startup event: {time.time()}", file=sys.stderr)
-    except Exception:
-        # If app doesn't support on_event or it's already running, ignore
-        pass
+    # Now handled by lifespan in api.py
     
     # Start uvicorn. When frozen, use the Server API and explicit lifecycle steps so we
     # can print timestamps for: config creation, server creation, startup (binding sockets)
@@ -163,15 +130,21 @@ def main():
 
     if not is_frozen:
         # Developer workflow: keep the concise API
-        uvicorn.run(
-            app,
-            host=HOST,
-            port=PORT,
-            reload=False,
-            log_level="info",
-            access_log=True,
-            log_config=None,
-        )
+        try:
+            uvicorn.run(
+                "server.api:app",
+                app_dir=".",
+                host=HOST,
+                port=PORT,
+                reload=False,
+                log_level="info",
+                access_log=True,
+                log_config=None,
+            )
+        except Exception as e:
+            print(f"Error in uvicorn.run: {e}")
+            import traceback
+            traceback.print_exc()
     else:
         # Frozen (PyInstaller) — use a thread to run server.run() and poll for readiness.
 

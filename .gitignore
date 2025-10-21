@@ -71,6 +71,15 @@ electron-builder-effective-config.yaml
 app/dist/
 release/
 
+# Electron build directories
+electron-app/build/
+electron-app/build-output/
+electron-app/dist/
+electron-app/dist-out/
+electron-app/dist2/
+electron-app/output/
+electron-app/output2/
+
 # PyInstaller
 *.spec
 
