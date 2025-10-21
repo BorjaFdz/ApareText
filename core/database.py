@@ -57,6 +57,11 @@ class Database:
                 self._insert_default_settings(session)
                 session.commit()
 
+            # Insertar ejemplos predeterminados si no hay snippets
+            if session.query(SnippetDB).count() == 0:
+                self._insert_default_snippets(session)
+                session.commit()
+
     def _insert_default_settings(self, session: Session) -> None:
         """Insertar configuración por defecto."""
         default_settings = {
@@ -78,6 +83,207 @@ class Database:
         for key, value in default_settings.items():
             setting = SettingsDB(key=key, value=value)
             session.add(setting)
+
+    def _insert_default_snippets(self, session: Session) -> None:
+        """Insertar snippets de ejemplo para onboarding."""
+        from datetime import datetime
+
+        default_snippets = [
+            {
+                "name": "👋 Saludo Personalizado",
+                "abbreviation": ";hola",
+                "content_text": "¡Hola {{nombre}}!\n\nEspero que te encuentres bien. {{mensaje_personal}}\n\nSaludos cordiales,\n{{tu_nombre}}",
+                "snippet_type": "text",
+                "tags": "saludo,email,personal",
+                "variables": [
+                    {
+                        "key": "nombre",
+                        "label": "Nombre de la persona",
+                        "type": "text",
+                        "placeholder": "Juan Pérez",
+                        "required": True
+                    },
+                    {
+                        "key": "mensaje_personal",
+                        "label": "Mensaje personalizado",
+                        "type": "text",
+                        "placeholder": "Me gustaría hablar contigo sobre...",
+                        "required": False
+                    },
+                    {
+                        "key": "tu_nombre",
+                        "label": "Tu nombre",
+                        "type": "text",
+                        "placeholder": "María García",
+                        "required": True
+                    }
+                ]
+            },
+            {
+                "name": "📧 Firma Profesional",
+                "abbreviation": ";firma",
+                "content_text": "{{tu_nombre}}\n{{cargo}}\n{{empresa}}\n📧 {{email}} | 📱 {{telefono}}\n🌐 {{sitio_web}}\n\n\"{{frase_motivacional}}\"",
+                "snippet_type": "text",
+                "tags": "firma,email,profesional",
+                "variables": [
+                    {
+                        "key": "tu_nombre",
+                        "label": "Tu nombre completo",
+                        "type": "text",
+                        "placeholder": "María García López",
+                        "required": True
+                    },
+                    {
+                        "key": "cargo",
+                        "label": "Tu cargo",
+                        "type": "text",
+                        "placeholder": "Desarrolladora Senior",
+                        "required": True
+                    },
+                    {
+                        "key": "empresa",
+                        "label": "Nombre de la empresa",
+                        "type": "text",
+                        "placeholder": "Tech Solutions S.A.",
+                        "required": True
+                    },
+                    {
+                        "key": "email",
+                        "label": "Correo electrónico",
+                        "type": "email",
+                        "placeholder": "maria.garcia@empresa.com",
+                        "required": True
+                    },
+                    {
+                        "key": "telefono",
+                        "label": "Teléfono",
+                        "type": "text",
+                        "placeholder": "+34 600 123 456",
+                        "required": False
+                    },
+                    {
+                        "key": "sitio_web",
+                        "label": "Sitio web",
+                        "type": "text",
+                        "placeholder": "www.empresa.com",
+                        "required": False
+                    },
+                    {
+                        "key": "frase_motivacional",
+                        "label": "Frase motivacional",
+                        "type": "text",
+                        "placeholder": "La innovación distingue entre un líder y un seguidor.",
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "name": "📅 Fecha y Hora Actual",
+                "abbreviation": ";fecha",
+                "content_text": "{{date:%d/%m/%Y}} a las {{date:%H:%M}}",
+                "snippet_type": "text",
+                "tags": "fecha,hora,tiempo",
+                "variables": []
+            },
+            {
+                "name": "📝 Notas de Reunión",
+                "abbreviation": ";meeting",
+                "content_text": "# Reunión: {{tema}}\n\n**Fecha:** {{date:%d/%m/%Y}}\n**Hora:** {{date:%H:%M}}\n**Participantes:** {{participantes}}\n\n## Agenda\n{{agenda}}\n\n## Decisiones\n{{decisiones}}\n\n## Próximos pasos\n{{proximos_pasos}}",
+                "snippet_type": "text",
+                "tags": "reunion,notas,trabajo",
+                "variables": [
+                    {
+                        "key": "tema",
+                        "label": "Tema de la reunión",
+                        "type": "text",
+                        "placeholder": "Revisión del proyecto Q4",
+                        "required": True
+                    },
+                    {
+                        "key": "participantes",
+                        "label": "Participantes",
+                        "type": "text",
+                        "placeholder": "Juan, María, Carlos",
+                        "required": True
+                    },
+                    {
+                        "key": "agenda",
+                        "label": "Puntos de agenda",
+                        "type": "text",
+                        "placeholder": "1. Estado del proyecto\n2. Próximos milestones\n3. Riesgos identificados",
+                        "required": False
+                    },
+                    {
+                        "key": "decisiones",
+                        "label": "Decisiones tomadas",
+                        "type": "text",
+                        "placeholder": "- Aprobar presupuesto adicional\n- Cambiar fecha de entrega",
+                        "required": False
+                    },
+                    {
+                        "key": "proximos_pasos",
+                        "label": "Próximos pasos",
+                        "type": "text",
+                        "placeholder": "- Juan: Preparar documentación\n- María: Coordinar con equipo",
+                        "required": False
+                    }
+                ]
+            },
+            {
+                "name": "🎯 Lorem Ipsum",
+                "abbreviation": ";lorem",
+                "content_text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                "snippet_type": "text",
+                "tags": "lorem,ipsum,placeholder,texto",
+                "variables": []
+            },
+            {
+                "name": "✅ Respuesta Rápida",
+                "abbreviation": ";gracias",
+                "content_text": "¡Gracias por tu {{tipo_mensaje}}!\n\n{{respuesta_personalizada}}\n\nSi necesitas algo más, no dudes en contactarme.\n\nSaludos,\n{{tu_nombre}}",
+                "snippet_type": "text",
+                "tags": "respuesta,gracias,email",
+                "variables": [
+                    {
+                        "key": "tipo_mensaje",
+                        "label": "Tipo de mensaje",
+                        "type": "select",
+                        "options": ["mensaje", "email", "consulta", "comentario"],
+                        "default_value": "mensaje",
+                        "required": True
+                    },
+                    {
+                        "key": "respuesta_personalizada",
+                        "label": "Respuesta personalizada",
+                        "type": "text",
+                        "placeholder": "He revisado tu consulta y te responderé pronto.",
+                        "required": False
+                    },
+                    {
+                        "key": "tu_nombre",
+                        "label": "Tu nombre",
+                        "type": "text",
+                        "placeholder": "María García",
+                        "required": True
+                    }
+                ]
+            }
+        ]
+
+        for snippet_data in default_snippets:
+            variables = snippet_data.pop("variables", [])
+            snippet = SnippetDB(**snippet_data)
+            session.add(snippet)
+            session.flush()  # Para obtener el ID
+
+            # Crear variables asociadas
+            for var_data in variables:
+                var_data["snippet_id"] = snippet.id
+                # Convertir options a JSON string si existe
+                if "options" in var_data and var_data["options"] is not None:
+                    var_data["options"] = json.dumps(var_data["options"])
+                variable = SnippetVariableDB(**var_data)
+                session.add(variable)
 
     def get_session(self) -> Session:
         """Obtener nueva sesión de base de datos."""

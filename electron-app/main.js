@@ -59,9 +59,7 @@ let backendProcess = null;
 function startBackendServer() {
     console.log('[ApareText] Backend integrated - no server to start');
     return true;
-}
-
-/**
+}/**
  * Detener el backend server
  */
 function stopBackendServer() {
@@ -538,6 +536,13 @@ ipcMain.handle('expand-snippet', async (event, snippetId, variables = {}) => {
             
             await copyImageToClipboard(snippet.image_data);
             
+            // Mostrar notificación de éxito
+            showNotification(
+                'Imagen Copiada',
+                `"${snippet.name}" se ha copiado al portapapeles`,
+                'success'
+            );
+            
             // Ocultar paleta DESPUÉS de copiar
             setTimeout(() => {
                 if (paletteWindow && !paletteWindow.isDestroyed()) {
@@ -561,6 +566,13 @@ ipcMain.handle('expand-snippet', async (event, snippetId, variables = {}) => {
         // Insertar texto (copiar a clipboard)
         await insertText(content);
         
+        // Mostrar notificación de éxito
+        showNotification(
+            'Snippet Expandido',
+            `"${snippet.name}" se ha insertado correctamente`,
+            'success'
+        );
+        
         // Ocultar paleta DESPUÉS de copiar
         setTimeout(() => {
             if (paletteWindow && !paletteWindow.isDestroyed()) {
@@ -572,6 +584,11 @@ ipcMain.handle('expand-snippet', async (event, snippetId, variables = {}) => {
 
     } catch (error) {
         console.error('Error expanding snippet:', error);
+        showNotification(
+            'Error al Expandir',
+            `No se pudo expandir el snippet: ${error.message}`,
+            'error'
+        );
         return { success: false, error: error.message };
     }
 });
@@ -579,9 +596,19 @@ ipcMain.handle('expand-snippet', async (event, snippetId, variables = {}) => {
 ipcMain.handle('create-snippet', async (event, snippetData) => {
     try {
         const response = await axios.post(`${API_URL}/api/snippets`, snippetData);
+        showNotification(
+            'Snippet Creado',
+            `"${snippetData.name}" se ha creado correctamente`,
+            'success'
+        );
         return response.data;
     } catch (error) {
         console.error('Error creating snippet:', error);
+        showNotification(
+            'Error al Crear',
+            `No se pudo crear el snippet: ${error.message}`,
+            'error'
+        );
         throw error;
     }
 });
@@ -589,19 +616,43 @@ ipcMain.handle('create-snippet', async (event, snippetData) => {
 ipcMain.handle('update-snippet', async (event, snippetId, snippetData) => {
     try {
         const response = await axios.put(`${API_URL}/api/snippets/${snippetId}`, snippetData);
+        showNotification(
+            'Snippet Actualizado',
+            `"${snippetData.name}" se ha actualizado correctamente`,
+            'success'
+        );
         return response.data;
     } catch (error) {
         console.error('Error updating snippet:', error);
+        showNotification(
+            'Error al Actualizar',
+            `No se pudo actualizar el snippet: ${error.message}`,
+            'error'
+        );
         throw error;
     }
 });
 
 ipcMain.handle('delete-snippet', async (event, snippetId) => {
     try {
+        // Primero obtener el nombre del snippet para la notificación
+        const snippetResponse = await axios.get(`${API_URL}/api/snippets/${snippetId}`);
+        const snippetName = snippetResponse.data.name;
+        
         await axios.delete(`${API_URL}/api/snippets/${snippetId}`);
+        showNotification(
+            'Snippet Eliminado',
+            `"${snippetName}" se ha eliminado correctamente`,
+            'success'
+        );
         return { success: true };
     } catch (error) {
         console.error('Error deleting snippet:', error);
+        showNotification(
+            'Error al Eliminar',
+            `No se pudo eliminar el snippet: ${error.message}`,
+            'error'
+        );
         throw error;
     }
 });
@@ -720,6 +771,84 @@ ipcMain.handle('import-snippets', async (event, filePath) => {
         throw error;
     }
 });
+
+// ============================================
+// CONFIGURATION SYSTEM
+// ============================================
+
+// Configuración por defecto
+const DEFAULT_CONFIG = {
+    theme: 'light',
+    fontSize: 'medium',
+    autoExpand: false,
+    confirmDelete: true,
+    showNotifications: true,
+    fuzzySearch: true,
+    searchTags: true,
+    defaultSort: 'name',
+    autoBackup: false,
+    backupFreq: 'weekly',
+    backupPath: ''
+};
+
+let userConfig = { ...DEFAULT_CONFIG };
+
+// Cargar configuración desde archivo
+async function loadConfig() {
+    try {
+        const configPath = path.join(app.getPath('userData'), 'config.json');
+        const configData = await fs.readFile(configPath, 'utf8');
+        const savedConfig = JSON.parse(configData);
+        userConfig = { ...DEFAULT_CONFIG, ...savedConfig };
+    } catch (error) {
+        // Si no existe el archivo, usar configuración por defecto
+        userConfig = { ...DEFAULT_CONFIG };
+    }
+}
+
+// Guardar configuración a archivo
+async function saveConfig(config) {
+    try {
+        const configPath = path.join(app.getPath('userData'), 'config.json');
+        await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+        userConfig = { ...config };
+    } catch (error) {
+        console.error('[ApareText] Error saving config:', error);
+        throw error;
+    }
+}
+
+// IPC: Obtener configuración
+ipcMain.handle('get-config', async () => {
+    await loadConfig();
+    return userConfig;
+});
+
+// IPC: Guardar configuración
+ipcMain.handle('save-config', async (event, config) => {
+    await saveConfig(config);
+    return { success: true };
+});
+
+// IPC: Seleccionar directorio
+ipcMain.handle('select-directory', async () => {
+    if (!mainWindow) return null;
+    
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory'],
+        title: 'Seleccionar carpeta para backups'
+    });
+    
+    if (result.canceled) {
+        return null;
+    }
+    
+    return result.filePaths[0];
+});
+
+// ============================================
+// FIN CONFIGURATION SYSTEM
+// ============================================
 
 // ============================================
 // FIN NUEVOS IPC HANDLERS

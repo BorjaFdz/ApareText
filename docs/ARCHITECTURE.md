@@ -7,12 +7,16 @@
 
 ## Tabla de Contenidos
 
+
 1. [Visión General](#visión-general)
 2. [Estructura del Proyecto](#estructura-del-proyecto)
+
 3. [Módulos Principales](#módulos-principales)
 4. [Flujos de Datos](#flujos-de-datos)
+
 5. [Base de Datos](#base-de-datos)
 6. [APIs y Comunicación](#apis-y-comunicación)
+
 7. [Consideraciones Multiplataforma](#consideraciones-multiplataforma)
 8. [Decisiones de Diseño](#decisiones-de-diseño)
 
@@ -22,13 +26,15 @@
 
 ApareText es una aplicación multiplataforma dividida en 3 módulos principales:
 
+
 - **Core:** Motor de snippets, persistencia y lógica de negocio
 - **Server:** API REST + WebSocket para comunicación con extensión
+
 - **Desktop:** Aplicación de escritorio con paleta global e inserción
 
 ### Stack Tecnológico
 
-```
+```	ext
 Backend:
   - Python 3.10+
   - SQLAlchemy (ORM)
@@ -48,58 +54,82 @@ Frontend (Extensión):
   - TypeScript
   - Manifest V3
   - WebSocket API
-```
+```	ext
 
 ---
 
 ## Estructura del Proyecto
 
-```
+```	ext
 ApareText/
 ├── core/                    # Motor de snippets (biblioteca compartida)
+
 │   ├── __init__.py
 │   ├── models.py           # Modelos Pydantic + SQLAlchemy
+
 │   ├── database.py         # Gestión de SQLite
+
 │   ├── template_parser.py  # Parser de plantillas
+
 │   └── snippet_manager.py  # CRUD de snippets
+
 │
 ├── server/                  # API REST + WebSocket
+
 │   ├── __init__.py
 │   ├── api.py              # Endpoints FastAPI
+
 │   ├── websocket.py        # Manager de WebSocket
+
 │   └── main.py             # Punto de entrada
+
 │
 ├── desktop/                 # Aplicación de escritorio
+
 │   ├── __init__.py
 │   ├── app.py              # Aplicación principal Qt
+
 │   ├── hotkeys.py          # Gestor de hotkeys globales
+
 │   ├── palette.py          # Command palette flotante
+
 │   ├── inserter.py         # Inserción de texto
+
 │   ├── tray.py             # System tray icon
+
 │   ├── settings_window.py  # Ventana de configuración
+
 │   └── main.py             # Punto de entrada
+
 │
 ├── extension/               # Extensión de navegador
+
 │   ├── manifest.json
 │   ├── background/         # Service worker
+
 │   ├── content/            # Content scripts
+
 │   └── popup/              # Popup UI
+
 │
 ├── tests/                   # Tests unitarios e integración
+
 │   ├── core/
 │   ├── server/
 │   └── desktop/
 │
 ├── docs/                    # Documentación
+
 │   ├── SPEC.md
 │   ├── ARCHITECTURE.md
 │   ├── API.md
 │   └── DEVELOPMENT.md
 │
 ├── pyproject.toml          # Configuración del proyecto
+
 ├── README.md
 └── .gitignore
-```
+```	ext
 
 ---
 
@@ -107,31 +137,41 @@ ApareText/
 
 ### 1. Core Module
 
-**Responsabilidades:**
+## Responsabilidades:
+
 - Modelado de datos (Snippets, Variables, Settings)
 - Persistencia en SQLite
+
 - Parsing de plantillas con variables y funciones
 - CRUD de snippets
+
 - Export/Import JSON
 - Logs de uso
 
-**Componentes Clave:**
+## Componentes Clave:
 
-#### `models.py`
+#### `models.py`	ext
+
 ```python
+
 # Modelos principales
+
 - Snippet (Pydantic)
 - SnippetVariable (Pydantic)
+
 - Settings (Pydantic)
 
 # Modelos de base de datos
+
 - SnippetDB (SQLAlchemy)
 - SnippetVariableDB (SQLAlchemy)
+
 - SettingsDB (SQLAlchemy)
 - UsageLogDB (SQLAlchemy)
-```
+```	ext
 
-#### `database.py`
+#### `database.py`	ext
+
 ```python
 class Database:
     - __init__(db_path)
@@ -140,9 +180,10 @@ class Database:
     - restore(backup_path)
     - export_to_json(output_path)
     - import_from_json(input_path, replace=False)
-```
+```	ext
 
-#### `template_parser.py`
+#### `template_parser.py`	ext
+
 ```python
 class TemplateParser:
     - extract_variables(template) -> list[str]
@@ -150,14 +191,21 @@ class TemplateParser:
     - parse_with_cursor_position() -> (str, int)
     - validate_template() -> (bool, error?)
     
-# Soporta:
-# - Variables: {{nombre}}, {{email}}
-# - Cursor: {{|}}
-# - Funciones: {{date:%Y-%m-%d}}, {{clipboard}}
-# - Escapes: \{{
-```
 
-#### `snippet_manager.py`
+# Soporta:
+
+# - Variables: {{nombre}}, {{email}}
+
+# - Cursor: {{|}}
+
+# - Funciones: {{date:%Y-%m-%d}}, {{clipboard}}
+
+# - Escapes: \{{
+
+```	ext
+
+#### `snippet_manager.py`	ext
+
 ```python
 class SnippetManager:
     - create_snippet(snippet) -> Snippet
@@ -169,44 +217,60 @@ class SnippetManager:
     - get_snippet_by_abbreviation(abbr) -> Snippet?
     - log_usage(snippet_id, source?, target_app?, target_domain?)
     - get_usage_stats(snippet_id?) -> dict
-```
+```	ext
 
 ---
 
 ### 2. Server Module
 
-**Responsabilidades:**
+## Responsabilidades:
+
 - API REST para CRUD de snippets
 - WebSocket para comunicación en tiempo real con extensión
-- Dashboard web (futuro)
-- Servir en `http://localhost:46321`
 
-**Componentes Clave:**
+- Dashboard web (futuro)
+- Servir en `http://localhost:46321`	ext
+
+## Componentes Clave:
 
 #### `api.py` - REST API
+
 ```python
+
 # Endpoints principales
+
 GET    /                          # Health check
+
 GET    /health                    # Health detallado
 
 GET    /api/snippets              # Listar snippets
+
 GET    /api/snippets/{id}         # Obtener snippet
+
 POST   /api/snippets              # Crear snippet
+
 PUT    /api/snippets/{id}         # Actualizar snippet
+
 DELETE /api/snippets/{id}         # Eliminar snippet
 
 GET    /api/snippets/search/{q}   # Buscar snippets
+
 GET    /api/abbreviations/{abbr}  # Buscar por abreviatura
+
 POST   /api/snippets/expand       # Expandir con variables
 
 GET    /api/stats                 # Estadísticas de uso
+
 GET    /api/export                # Exportar JSON
+
 POST   /api/import                # Importar JSON
 
 POST   /api/validate-template     # Validar sintaxis
-```
+
+```	ext
 
 #### `websocket.py` - WebSocket Manager
+
 ```python
 class WebSocketManager:
     - connect(websocket)
@@ -216,38 +280,49 @@ class WebSocketManager:
     - handle_message(websocket, data) -> response?
 
 # Tipos de mensajes
+
 - ping/pong
 - search -> search_results
+
 - expand -> expand_result
 - get_snippet -> snippet_data
+
 - error
-```
+```	ext
 
 #### `main.py` - Servidor
+
 ```python
+
 # Endpoint WebSocket
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket)
 
 def main():
     # Uvicorn en localhost:46321
+
     uvicorn.run("server.main:app", host="127.0.0.1", port=46321)
-```
+```	ext
 
 ---
 
 ### 3. Desktop Module
 
-**Responsabilidades:**
+## Responsabilidades:
+
 - Paleta global con hotkey
 - Inserción de texto en apps activas
+
 - Detector de abreviaturas (futuro)
 - System tray icon
+
 - Ventana de configuración
 
-**Componentes Clave:**
+## Componentes Clave:
 
 #### `app.py` - Aplicación Principal
+
 ```python
 class DesktopApp:
     - __init__()
@@ -257,42 +332,59 @@ class DesktopApp:
     - toggle_pause()
     - quit_app()
     - run() -> exit_code
-```
+```	ext
 
 #### `hotkeys.py` - Hotkeys Globales
+
 ```python
 class HotkeyManager:
     - __init__()                      # Detecta plataforma
+
     - register(hotkey, callback)      # Registrar hotkey
+
     - unregister(hotkey)              # Desregistrar
+
     - unregister_all()
     - is_supported() -> bool
 
 # Backends por plataforma:
+
 # - Windows/Linux: keyboard library
+
 # - macOS: pynput
-```
+
+```	ext
 
 #### `palette.py` - Command Palette
+
 ```python
 class CommandPalette(QDialog):
     - __init__(snippet_manager)
     - setup_ui()                      # Ventana frameless
+
     - load_snippets()
     - update_results(snippets)
     - on_search(query)                # Búsqueda incremental
+
     - on_item_selected(item)
     - insert_snippet(snippet)
     - show_and_focus()
     
+
 # Features:
+
 # - Búsqueda difusa
+
 # - Navegación con teclado
+
 # - Preview
+
 # - Styled con Qt CSS
-```
+
+```	ext
 
 #### `inserter.py` - Inserción de Texto
+
 ```python
 class TextInserter:
     - __init__(method='auto', typing_speed=50)
@@ -302,40 +394,59 @@ class TextInserter:
     - get_available_methods() -> list[str]
 
 # Métodos:
+
 # - 'type': Simular tecleo (keyboard/pynput)
+
 # - 'clipboard': Copiar + Ctrl/Cmd+V + restaurar
+
 # - 'auto': Intentar type, fallback clipboard
-```
+
+```	ext
 
 #### `tray.py` - System Tray
+
 ```python
 class TrayIcon(QSystemTrayIcon):
     - __init__(app)
     - create_menu()                   # Menú contextual
+
     - on_tray_activated(reason)
     - update_pause_state(is_paused)
 
 # Opciones del menú:
+
 # - Open Palette
+
 # - Pause/Resume
+
 # - Settings
+
 # - Quit
-```
+
+```	ext
 
 #### `settings_window.py` - Configuración
+
 ```python
 class SettingsWindow(QDialog):
     - __init__()
     - setup_ui()                      # Form con tabs
+
     - load_settings()                 # Desde DB
+
     - save_settings()                 # A DB
 
 # Categorías:
+
 # - Hotkeys
+
 # - Insertion
+
 # - UI (theme, language)
+
 # - Behavior (auto-start, notifications)
-```
+
+```	ext
 
 ---
 
@@ -343,7 +454,7 @@ class SettingsWindow(QDialog):
 
 ### Flujo 1: Insertar desde Paleta Global
 
-```
+```	ext
 ┌──────┐
 │ User │ Presiona Ctrl+Space
 └──┬───┘
@@ -383,11 +494,11 @@ class SettingsWindow(QDialog):
         ├─ Método 'type' ──► keyboard.write()
         │
         └─ Método 'clipboard' ──► clipboard + Ctrl+V
-```
+```	ext
 
 ### Flujo 2: Expansión desde Extensión
 
-```
+```	ext
 ┌───────────────┐
 │ Content Script│ Usuario escribe en textarea
 └───────┬───────┘
@@ -433,7 +544,7 @@ class SettingsWindow(QDialog):
 ┌───────────────┐
 │ Content Script│ insertHTML() en textarea
 └───────────────┘
-```
+```	ext
 
 ---
 
@@ -441,7 +552,7 @@ class SettingsWindow(QDialog):
 
 ### Esquema SQLite
 
-**Ubicación:** `~/.aparetext/aparetext.db`
+**Ubicación:** `~/.aparetext/aparetext.db`	ext
 
 ```sql
 -- Tabla principal de snippets
@@ -498,15 +609,17 @@ CREATE TABLE usage_log (
 
 CREATE INDEX idx_usage_log_snippet ON usage_log(snippet_id);
 CREATE INDEX idx_usage_log_timestamp ON usage_log(timestamp);
-```
+```	ext
 
 ### Migraciones
 
 **Sistema:** Alembic (futuro)
 
 **Versión inicial:** 1.0.0
+
 - Tablas base
 - Índices
+
 - Settings por defecto
 
 ---
@@ -515,7 +628,7 @@ CREATE INDEX idx_usage_log_timestamp ON usage_log(timestamp);
 
 ### REST API
 
-**Base URL:** `http://localhost:46321`
+**Base URL:** `http://localhost:46321`	ext
 
 **Autenticación:** Ninguna (localhost only)
 
@@ -523,10 +636,12 @@ CREATE INDEX idx_usage_log_timestamp ON usage_log(timestamp);
 
 **Formato:** JSON
 
-**Ejemplo de Request/Response:**
+## Ejemplo de Request/Response:
 
 ```bash
+
 # Crear snippet
+
 POST /api/snippets
 Content-Type: application/json
 
@@ -540,6 +655,7 @@ Content-Type: application/json
 }
 
 # Response 201 Created
+
 {
   "id": "abc123...",
   "name": "Firma Email",
@@ -555,15 +671,15 @@ Content-Type: application/json
   "created_at": "2025-10-07T10:30:00",
   "updated_at": "2025-10-07T10:30:00"
 }
-```
+```	ext
 
 ### WebSocket Protocol
 
-**URL:** `ws://localhost:46321/ws`
+**URL:** `ws://localhost:46321/ws`	ext
 
 **Formato:** JSON messages
 
-**Mensajes soportados:**
+## Mensajes soportados:
 
 ```javascript
 // Ping
@@ -595,7 +711,7 @@ Content-Type: application/json
 
 // Error
 ← { "type": "error", "error": "Snippet not found" }
-```
+```	ext
 
 ---
 
@@ -603,50 +719,65 @@ Content-Type: application/json
 
 ### Windows
 
-**Ventajas:**
+## Ventajas:
+
 - Excelente soporte para hotkeys globales
 - Inserción por `SendInput` muy confiable
+
 - Sin necesidad de permisos especiales
 
-**Desafíos:**
+## Desafíos:
+
 - SmartScreen puede bloquear ejecutable sin firma
 - Antivirus pueden detectar listeners de teclado
 
-**Soluciones:**
+## Soluciones:
+
 - Firmar ejecutable con certificado de código
 - Añadir información de versión y manifiesto
+
 - Documentar claramente el propósito
 
 ### macOS
 
-**Ventajas:**
+## Ventajas:
+
 - API Quartz robusta para eventos
 - Integración nativa con Accessibility
 
-**Desafíos:**
+## Desafíos:
+
 - Requiere permisos explícitos del usuario
 - App Store tiene restricciones adicionales
+
 - Notarización obligatoria para evitar warnings
 
-**Soluciones:**
+## Soluciones:
+
 - UI de onboarding clara para solicitar permisos
 - Notarizar app con certificado de desarrollador
+
 - Proveer instrucciones en System Preferences
 
 ### Linux
 
-**Ventajas:**
+## Ventajas:
+
 - Código abierto, sin restricciones
 - Usuarios técnicos, familiarizados con permisos
 
-**Desafíos:**
+## Desafíos:
+
 - Wayland no soporta injection de eventos
 - Distribuciones muy variadas
+
 - Puede requerir permisos root
 
-**Soluciones:**
+## Soluciones:
+
 - Detectar X11 vs Wayland
 - Fallback a clipboard en Wayland
+
 - Documentar permisos necesarios
 - Proveer script de instalación
 
@@ -657,12 +788,15 @@ Content-Type: application/json
 ### ¿Por qué Python?
 
 ✅ **Pros:**
+
 - Cross-platform
 - Excelentes bibliotecas (Qt, SQLAlchemy)
+
 - Rápido desarrollo
 - Fácil distribución con PyInstaller
 
 ❌ **Contras:**
+
 - Ejecutable grande (~50-100MB)
 - Arranque más lento que nativo
 
@@ -671,12 +805,15 @@ Content-Type: application/json
 ### ¿Por qué SQLite?
 
 ✅ **Pros:**
+
 - Sin servidor, sin configuración
 - Archivo único portable
+
 - Rápido para < 10k snippets
 - Transacciones ACID
 
 ❌ **Contras:**
+
 - No adecuado para multi-usuario
 - Sin sincronización built-in
 
@@ -685,12 +822,15 @@ Content-Type: application/json
 ### ¿Por qué FastAPI?
 
 ✅ **Pros:**
+
 - Moderno, rápido, async
 - Validación automática con Pydantic
+
 - OpenAPI docs auto-generados
 - WebSocket support
 
 ❌ **Contras:**
+
 - Requiere servidor corriendo
 
 **Decisión:** FastAPI ideal para API + WebSocket, mínimo overhead
@@ -698,18 +838,23 @@ Content-Type: application/json
 ### ¿Por qué PySide6 (Qt)?
 
 ✅ **Pros:**
+
 - Maduro, estable, cross-platform
 - Widgets nativos
+
 - Excelente para ventanas personalizadas
 - Licencia LGPL
 
 ❌ **Contras:**
+
 - Curva de aprendizaje
 - Tamaño del ejecutable
 
-**Alternativas consideradas:**
+## Alternativas consideradas:
+
 - Electron: Demasiado pesado (200+ MB)
 - Tkinter: Aspecto anticuado
+
 - wxPython: Menos documentación
 
 **Decisión:** Qt es el estándar de facto para apps Python desktop
@@ -718,9 +863,11 @@ Content-Type: application/json
 
 **Pregunta:** ¿Por qué separar server y desktop?
 
-**Respuesta:**
+## Respuesta:
+
 1. **Modularidad:** Extensión puede conectarse a API
 2. **Testing:** Testear API independientemente
+
 3. **Futuro:** Dashboard web sin cambios
 4. **IPC:** Canal limpio entre procesos
 
@@ -730,19 +877,25 @@ Content-Type: application/json
 
 ### Targets
 
+
 - **Arranque app:** < 400ms
 - **Apertura paleta:** < 80ms
+
 - **Búsqueda incremental:** < 50ms por keystroke
 - **Inserción texto:** < 100ms
+
 - **Memoria idle:** < 60 MB
 - **CPU idle:** < 2%
 
 ### Optimizaciones
 
+
 1. **Lazy loading:** Cargar snippets solo cuando se necesitan
 2. **Índices DB:** En abbreviation, enabled, tags
+
 3. **Cache:** Snippets frecuentes en memoria
 4. **Throttling:** Búsqueda con debounce 100ms
+
 5. **Connection pooling:** Reusar sesiones de DB
 
 ---
@@ -761,8 +914,10 @@ Content-Type: application/json
 
 ### Principios
 
+
 1. **Local-first:** Sin cloud por defecto
 2. **Opt-in:** Telemetría y sincronización opcionales
+
 3. **Transparencia:** Código abierto
 4. **Minimización:** Permisos mínimos necesarios
 
@@ -778,11 +933,14 @@ Esta arquitectura proporciona:
 ✅ Mantenibilidad con estructura clara  
 ✅ Cross-platform con abstracciones apropiadas
 
-**Próximos pasos:**
+## Próximos pasos:
+
 - Implementar detector de abreviaturas
 - Crear extensión de navegador
+
 - Añadir scopes por app/dominio
 - Implementar variables en formulario
+
 - Tests E2E en apps reales
 
 ---

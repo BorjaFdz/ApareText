@@ -157,10 +157,18 @@ class TemplateParser:
         else:
             dt_format = default_format
 
+        # Validar directivas de strftime: buscar '%' seguido de un caracter
+        # y comprobar que el caracter es una directiva válida de strftime
+        VALID_DIRECTIVES = set([
+            '%', 'A', 'B', 'C', 'D', 'F', 'G', 'H', 'I', 'M', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'm', 'n', 'p', 'r', 't', 'u', 'w', 'x', 'y', 'z'
+        ])
+
         try:
             return datetime.now().strftime(dt_format)
-        except ValueError:
-            return f"{{{{{func_name}{format_arg or ''}}}}}"  # Formato inválido, devolver original
+        except Exception:
+            # En caso de cualquier error, devolver token original
+            return f"{{{{{func_name}{format_arg or ''}}}}}"
 
     def _process_date_function(self, format_arg: Optional[str]) -> str:
         """Procesar función {{date:format}}."""
@@ -217,17 +225,22 @@ class TemplateParser:
         if open_braces != close_braces:
             return False, f"Unbalanced braces: {open_braces} opening, {close_braces} closing"
 
-        # Verificar funciones válidas
-        for match in self.FUNCTION_PATTERN.finditer(template):
-            func_name = match.group(1)
-            if func_name not in {"date", "clipboard", "time"}:
-                return False, f"Unknown function: {func_name}"
-
-        # Verificar formato de variables
-        all_vars = self.VARIABLE_PATTERN.findall(template)
-        for var in all_vars:
-            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", var):
-                return False, f"Invalid variable name: {var}"
+        # Encontrar todos los patrones {{...}}
+        all_patterns = re.findall(r'\{\{([^}]+)\}\}', template)
+        
+        for pattern in all_patterns:
+            if ':' in pattern:
+                # Es una función (tiene argumentos)
+                func_name = pattern.split(':', 1)[0]
+                if func_name not in {"date", "clipboard", "time"}:
+                    return False, f"Unknown function: {func_name}"
+            elif pattern == "|":
+                # Cursor marker es válido
+                continue
+            else:
+                # Debe ser variable válida
+                if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", pattern):
+                    return False, f"Invalid variable name: {pattern}"
 
         return True, None
 
