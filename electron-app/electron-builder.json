@@ -14,16 +14,11 @@
     "!**/.git*",
     "!scripts",
     "!*.md",
-    "!package-lock.json"
+    "!package-lock.json",
+    "../core/**"
   ],
   "asar": true,
   "beforeBuild": "scripts/before-build.js",
-  "extraResources": [
-    {
-      "from": "../dist/ApareText-Server-v2.exe",
-      "to": "ApareText-Server.exe"
-    }
-  ],
   "nsis": {
     "allowToChangeInstallationDirectory": true,
     "oneClick": false,

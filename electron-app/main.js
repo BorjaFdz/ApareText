@@ -8,11 +8,37 @@ const path = require('path');
 const axios = require('axios');
 const fs = require('fs').promises;
 const { spawn } = require('child_process');
+const { PythonShell } = require('python-shell');
 
 // Configuración
 const API_HOST = '127.0.0.1';
 const API_PORT = 46321;
 const API_URL = `http://${API_HOST}:${API_PORT}`;
+
+// Helper function to call Python backend
+function callPythonBackend(func, args = []) {
+    return new Promise((resolve, reject) => {
+        const options = {
+            mode: 'text',
+            pythonPath: 'python', // or 'python3' depending on system
+            scriptPath: __dirname,
+            args: [func, ...args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg)]
+        };
+
+        PythonShell.run('python_backend.py', options, (err, results) => {
+            if (err) {
+                reject(err);
+            } else {
+                try {
+                    const result = JSON.parse(results[0]);
+                    resolve(result);
+                } catch (e) {
+                    reject(e);
+                }
+            }
+        });
+    });
+}
 
 // Constantes de UI
 const WINDOW_SIZES = {
@@ -28,107 +54,18 @@ let isEnabled = true;
 let backendProcess = null;
 
 /**
- * Iniciar el backend server automáticamente
+ * Backend is now integrated, no need to start server
  */
 function startBackendServer() {
-    console.log('[ApareText] Starting backend server...');
-    
-    // En desarrollo, el backend se inicia manualmente
-    // En producción, usar el ejecutable empaquetado
-    const isDev = !app.isPackaged;
-    
-    if (isDev) {
-        console.log('[ApareText] Development mode - expecting manual server start');
-        return null;
-    }
-    
-    // Ruta al ejecutable del backend en producción
-    const backendPath = path.join(process.resourcesPath, 'ApareText-Server.exe');
-    
-    console.log(`[ApareText] Backend path: ${backendPath}`);
-    
-    // Verificar que existe
-    if (!require('fs').existsSync(backendPath)) {
-        console.error('[ApareText] Backend executable not found at:', backendPath);
-        dialog.showErrorBox(
-            'Backend Not Found',
-            `Could not find backend server at:\n${backendPath}\n\nPlease reinstall the application.`
-        );
-        return null;
-    }
-    
-    // Iniciar el proceso del backend
-    try {
-        backendProcess = spawn(backendPath, [], {
-            detached: false,
-            stdio: ['ignore', 'pipe', 'pipe'], // Capturar stdout y stderr
-            windowsHide: true // Ocultar ventana de consola en Windows
-        });
-
-        // Capturar logs del backend
-        const encoding = 'utf8'; // Usar UTF-8 en lugar de cp1252 que ya no es soportado
-        if (backendProcess.stdout) {
-            backendProcess.stdout.on('data', (data) => {
-                const log = data.toString(encoding);
-                console.log('[Backend]', log.trim());
-                if (loadingWindow && !loadingWindow.isDestroyed()) {
-                    loadingWindow.webContents.send('loading-log', `[INFO] ${log.trim()}`);
-                }
-            });
-        }
-
-        if (backendProcess.stderr) {
-            backendProcess.stderr.on('data', (data) => {
-                const log = data.toString(encoding);
-                console.error('[Backend]', log.trim());
-                if (loadingWindow && !loadingWindow.isDestroyed()) {
-                    loadingWindow.webContents.send('loading-log', `[ERROR] ${log.trim()}`);
-                }
-            });
-        }
-        
-        backendProcess.on('error', (err) => {
-            console.error('[ApareText] Failed to start backend:', err);
-            if (loadingWindow && !loadingWindow.isDestroyed()) {
-                loadingWindow.webContents.send('loading-log', `[ERROR] Failed to start backend: ${err.message}`);
-            }
-            dialog.showErrorBox(
-                'Backend Error',
-                `Failed to start backend server:\n${err.message}`
-            );
-        });
-        
-        backendProcess.on('exit', (code, signal) => {
-            console.log(`[ApareText] Backend exited with code ${code}, signal ${signal}`);
-            if (loadingWindow && !loadingWindow.isDestroyed()) {
-                loadingWindow.webContents.send('loading-log', `[ERROR] Backend process exited unexpectedly (code: ${code}, signal: ${signal})`);
-            }
-            backendProcess = null;
-        });
-        
-        console.log(`[ApareText] Backend started with PID: ${backendProcess.pid}`);
-        return backendProcess;
-        
-    } catch (error) {
-        console.error('[ApareText] Error spawning backend:', error);
-        return null;
-    }
+    console.log('[ApareText] Backend integrated - no server to start');
+    return true;
 }
 
 /**
  * Detener el backend server
  */
 function stopBackendServer() {
-    if (backendProcess && !backendProcess.killed) {
-        console.log('[ApareText] Stopping backend server...');
-        try {
-            backendProcess.kill();
-            backendProcess = null;
-            console.log('[ApareText] Backend stopped');
-        } catch (error) {
-            console.error('[ApareText] Error stopping backend:', error);
-        }
-    }
+    // No backend process to stop
 }
 
 /**
@@ -365,13 +302,13 @@ function registerHotkeys() {
 }
 
 /**
- * Verificar que el servidor API está corriendo
+ * Verificar que el backend Python está funcionando
  */
 async function checkApiServer(retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {
-            const response = await axios.get(`${API_URL}/health`, { timeout: 2000 });
-            return true;
+            const result = await callPythonBackend('health');
+            return result.status === 'healthy';
         } catch (error) {
             if (i < retries - 1) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -567,8 +504,8 @@ app.on('window-all-closed', () => {
  */
 ipcMain.handle('get-snippets', async () => {
     try {
-        const response = await axios.get(`${API_URL}/api/snippets`);
-        return response.data;
+        const result = await callPythonBackend('get_snippets');
+        return result;
     } catch (error) {
         console.error('Error fetching snippets:', error);
         return [];
@@ -577,8 +514,8 @@ ipcMain.handle('get-snippets', async () => {
 
 ipcMain.handle('search-snippets', async (event, query) => {
     try {
-        const response = await axios.get(`${API_URL}/api/snippets/search/${encodeURIComponent(query)}`);
-        return response.data;
+        const result = await callPythonBackend('search_snippets', [query]);
+        return result;
     } catch (error) {
         console.error('Error searching snippets:', error);
         return [];

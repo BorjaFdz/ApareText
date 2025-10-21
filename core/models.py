@@ -58,11 +58,11 @@ class SnippetDB(Base):
     content_html = Column(Text, nullable=True)
     is_rich = Column(Boolean, default=False)
     image_data = Column(Text, nullable=True)  # Base64 image data para snippets tipo IMAGE
-    scope_type = Column(String, default=ScopeType.GLOBAL.value)
+    scope_type = Column(String, default=ScopeType.GLOBAL.value, index=True)
     scope_values = Column(Text, nullable=True)  # JSON array
     caret_marker = Column(String, default="{{|}}")
     usage_count = Column(Integer, default=0)
-    enabled = Column(Boolean, default=True)
+    enabled = Column(Boolean, default=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

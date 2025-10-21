@@ -94,8 +94,15 @@ class SnippetManager:
         Returns:
             Snippet o None si no existe
         """
+        from sqlalchemy.orm import selectinload
+
         with self.db.get_session() as session:
-            snippet_db = session.query(SnippetDB).filter_by(id=snippet_id).first()
+            snippet_db = (
+                session.query(SnippetDB)
+                .options(selectinload(SnippetDB.variables))
+                .filter_by(id=snippet_id)
+                .first()
+            )
             if snippet_db:
                 return self._db_to_pydantic(snippet_db)
             return None
@@ -210,7 +217,10 @@ class SnippetManager:
             Lista de snippets que coinciden
         """
         with self.db.get_session() as session:
-            db_query = session.query(SnippetDB)
+            from sqlalchemy import or_
+            from sqlalchemy.orm import selectinload
+
+            db_query = session.query(SnippetDB).options(selectinload(SnippetDB.variables))
 
             if enabled_only:
                 db_query = db_query.filter_by(enabled=True)
@@ -218,37 +228,27 @@ class SnippetManager:
             if scope_type:
                 db_query = db_query.filter_by(scope_type=scope_type)
 
-            snippets_db = db_query.all()
-
-            # Filtrar por query
-            results = []
-            query_lower = query.lower()
-
-            for snippet_db in snippets_db:
-                # Buscar en nombre
-                if query_lower in snippet_db.name.lower():
-                    results.append(snippet_db)
-                    continue
-
-                # Buscar en abreviatura
-                if snippet_db.abbreviation and query_lower in snippet_db.abbreviation.lower():
-                    results.append(snippet_db)
-                    continue
-
-                # Buscar en tags
-                if snippet_db.tags and query_lower in snippet_db.tags.lower():
-                    results.append(snippet_db)
-                    continue
+            # Filtrar por query en la base de datos
+            if query:
+                query_lower = f"%{query.lower()}%"
+                db_query = db_query.filter(
+                    or_(
+                        SnippetDB.name.ilike(query_lower),
+                        SnippetDB.abbreviation.ilike(query_lower),
+                        SnippetDB.tags.ilike(query_lower),
+                    )
+                )
 
             # Filtrar por tags adicionales
             if tags:
-                results = [
-                    s
-                    for s in results
-                    if s.tags and any(tag in s.tags.split(",") for tag in tags)
-                ]
+                tag_filters = []
+                for tag in tags:
+                    tag_filters.append(SnippetDB.tags.like(f"%{tag}%"))
+                if tag_filters:
+                    db_query = db_query.filter(or_(*tag_filters))
 
-            return [self._db_to_pydantic(s) for s in results]
+            snippets_db = db_query.all()
+            return [self._db_to_pydantic(snippet_db) for snippet_db in snippets_db]
 
     def get_snippet_by_abbreviation(self, abbreviation: str) -> Optional[Snippet]:
         """
@@ -260,9 +260,12 @@ class SnippetManager:
         Returns:
             Snippet o None si no existe
         """
+        from sqlalchemy.orm import selectinload
+
         with self.db.get_session() as session:
             snippet_db = (
                 session.query(SnippetDB)
+                .options(selectinload(SnippetDB.variables))
                 .filter_by(abbreviation=abbreviation, enabled=True)
                 .first()
             )

@@ -31,7 +31,12 @@ class Database:
             db_path = str(aparetext_dir / "aparetext.db")
 
         self.db_path = db_path
-        self.engine = create_engine(f"sqlite:///{db_path}", echo=False)
+        self.engine = create_engine(
+            f"sqlite:///{db_path}",
+            echo=False,
+            connect_args={"check_same_thread": False},  # Allow multi-threading
+            pool_pre_ping=True,  # Check connection before use
+        )
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
         # Defer heavy DB initialization (create_all / default inserts) until first session is requested.
@@ -41,6 +46,10 @@ class Database:
     def _init_db(self) -> None:
         """Crear tablas en la base de datos."""
         Base.metadata.create_all(bind=self.engine)
+        # Enable foreign keys for SQLite
+        with self.engine.connect() as conn:
+            conn.execute("PRAGMA foreign_keys=ON;")
+            conn.commit()
 
         # Insertar configuración por defecto si no existe
         with self.SessionLocal() as session:
@@ -195,6 +204,8 @@ class Database:
         Returns:
             Dict con 'imported' y 'skipped' counts
         """
+        from datetime import datetime
+
         with open(input_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
@@ -212,45 +223,105 @@ class Database:
                 # Verificar si existe por ID
                 existing = session.query(SnippetDB).filter_by(id=snippet_data["id"]).first()
                 if existing:
-                    skipped += 1
-                    continue  # Skip duplicados
+                    # Update existing snippet
+                    existing.name = snippet_data["name"]
+                    existing.abbreviation = snippet_data.get("abbreviation")
+                    existing.snippet_type = snippet_data.get("snippet_type", "text")
+                    existing.tags = ",".join(snippet_data.get("tags", []))
+                    existing.content_text = snippet_data.get("content_text")
+                    existing.content_html = snippet_data.get("content_html")
+                    existing.is_rich = snippet_data.get("is_rich", False)
+                    existing.image_data = snippet_data.get("image_data")
+                    existing.scope_type = snippet_data.get("scope_type", "global")
+                    existing.scope_values = json.dumps(snippet_data.get("scope_values", []))
+                    existing.caret_marker = snippet_data.get("caret_marker", "{{|}}")
+                    existing.usage_count = snippet_data.get("usage_count", 0)
+                    existing.enabled = snippet_data.get("enabled", True)
+                    if "created_at" in snippet_data and snippet_data["created_at"]:
+                        try:
+                            existing.created_at = datetime.fromisoformat(snippet_data["created_at"].replace('Z', '+00:00'))
+                        except:
+                            pass
+                    if "updated_at" in snippet_data and snippet_data["updated_at"]:
+                        try:
+                            existing.updated_at = datetime.fromisoformat(snippet_data["updated_at"].replace('Z', '+00:00'))
+                        except:
+                            pass
+                    # Update variables
+                    # First delete existing variables
+                    session.query(SnippetVariableDB).filter_by(snippet_id=existing.id).delete()
+                    # Then add new ones
+                    for var_data in snippet_data.get("variables", []):
+                        var_db = SnippetVariableDB(
+                            id=var_data.get("id"),
+                            snippet_id=existing.id,
+                            key=var_data["key"],
+                            label=var_data.get("label"),
+                            type=var_data.get("type", "text"),
+                            placeholder=var_data.get("placeholder"),
+                            default_value=var_data.get("default_value"),
+                            required=var_data.get("required", False),
+                            regex=var_data.get("regex"),
+                            options=json.dumps(var_data.get("options")) if var_data.get("options") else None,
+                        )
+                        session.add(var_db)
+                    imported += 1
+                else:
+                    # Create new snippet
+                    # Parse dates
+                    created_at = None
+                    updated_at = None
+                    if "created_at" in snippet_data and snippet_data["created_at"]:
+                        try:
+                            created_at = datetime.fromisoformat(snippet_data["created_at"].replace('Z', '+00:00'))
+                        except:
+                            pass
+                    if "updated_at" in snippet_data and snippet_data["updated_at"]:
+                        try:
+                            updated_at = datetime.fromisoformat(snippet_data["updated_at"].replace('Z', '+00:00'))
+                        except:
+                            pass
 
-                # Crear snippet
-                snippet_db = SnippetDB(
-                    id=snippet_data["id"],
-                    name=snippet_data["name"],
-                    abbreviation=snippet_data.get("abbreviation"),
-                    tags=",".join(snippet_data.get("tags", [])),
-                    content_text=snippet_data.get("content_text"),
-                    content_html=snippet_data.get("content_html"),
-                    is_rich=snippet_data.get("is_rich", False),
-                    scope_type=snippet_data.get("scope_type", "global"),
-                    scope_values=json.dumps(snippet_data.get("scope_values", [])),
-                    caret_marker=snippet_data.get("caret_marker", "{{|}}"),
-                    usage_count=snippet_data.get("usage_count", 0),
-                    enabled=snippet_data.get("enabled", True),
-                )
-
-                session.add(snippet_db)
-                session.flush()  # Para obtener el ID
-
-                # Crear variables
-                for var_data in snippet_data.get("variables", []):
-                    var_db = SnippetVariableDB(
-                        id=var_data.get("id"),
-                        snippet_id=snippet_db.id,
-                        key=var_data["key"],
-                        label=var_data.get("label"),
-                        type=var_data.get("type", "text"),
-                        placeholder=var_data.get("placeholder"),
-                        default_value=var_data.get("default_value"),
-                        required=var_data.get("required", False),
-                        regex=var_data.get("regex"),
-                        options=json.dumps(var_data.get("options")) if var_data.get("options") else None,
+                    # Crear snippet
+                    snippet_db = SnippetDB(
+                        id=snippet_data["id"],
+                        name=snippet_data["name"],
+                        abbreviation=snippet_data.get("abbreviation"),
+                        snippet_type=snippet_data.get("snippet_type", "text"),
+                        tags=",".join(snippet_data.get("tags", [])),
+                        content_text=snippet_data.get("content_text"),
+                        content_html=snippet_data.get("content_html"),
+                        is_rich=snippet_data.get("is_rich", False),
+                        image_data=snippet_data.get("image_data"),
+                        scope_type=snippet_data.get("scope_type", "global"),
+                        scope_values=json.dumps(snippet_data.get("scope_values", [])),
+                        caret_marker=snippet_data.get("caret_marker", "{{|}}"),
+                        usage_count=snippet_data.get("usage_count", 0),
+                        enabled=snippet_data.get("enabled", True),
+                        created_at=created_at,
+                        updated_at=updated_at,
                     )
-                    session.add(var_db)
 
-                imported += 1
+                    session.add(snippet_db)
+                    session.flush()
+
+                    # Crear variables
+                    for var_data in snippet_data.get("variables", []):
+                        var_db = SnippetVariableDB(
+                            id=var_data.get("id"),
+                            snippet_id=snippet_db.id,
+                            key=var_data["key"],
+                            label=var_data.get("label"),
+                            type=var_data.get("type", "text"),
+                            placeholder=var_data.get("placeholder"),
+                            default_value=var_data.get("default_value"),
+                            required=var_data.get("required", False),
+                            regex=var_data.get("regex"),
+                            options=json.dumps(var_data.get("options")) if var_data.get("options") else None,
+                        )
+                        session.add(var_db)
+
+                    imported += 1
 
             session.commit()
 
